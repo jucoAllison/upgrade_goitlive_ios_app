@@ -18,6 +18,8 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>GoitLive uses Bluetooth to connect with nearby devices and improve your live streaming experience.</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
@@ -31,10 +33,66 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>GoitLive needs access to your camera to stream live video and more.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GoitLive needs access to the microphone for streaming live video and more.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>RCTNewArchEnabled</key>
-	<false/>
+	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to find friends on the app.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>GoitLive needs permission to save images to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GoitLive needs access to your photo library to let you upload profile pictures and share content.</string>
+	<key>UIAppFonts</key>
+	<array>
+	<string>AntDesign.ttf</string>
+  <string>Entypo.ttf</string>
+  <string>EvilIcons.ttf</string>
+  <string>Feather.ttf</string>
+  <string>FontAwesome.ttf</string>
+  <string>FontAwesome5_Brands.ttf</string>
+  <string>FontAwesome5_Regular.ttf</string>
+  <string>FontAwesome5_Solid.ttf</string>
+  <string>FontAwesome6_Brands.ttf</string>
+  <string>FontAwesome6_Regular.ttf</string>
+  <string>FontAwesome6_Solid.ttf</string>
+  <string>Foundation.ttf</string>
+  <string>Ionicons.ttf</string>
+  <string>MaterialIcons.ttf</string>
+  <string>MaterialCommunityIcons.ttf</string>
+  <string>SimpleLineIcons.ttf</string>
+  <string>Octicons.ttf</string>
+  <string>Zocial.ttf</string>
+  <string>Fontisto.ttf</string>
+		<string>Gilroy-Black.ttf</string>
+		<string>Gilroy-BlackItalic.ttf</string>
+		<string>Gilroy-Bold.ttf</string>
+		<string>Gilroy-BoldItalic.ttf</string>
+		<string>Gilroy-ExtraBold.ttf</string>
+		<string>Gilroy-ExtraBoldItalic.ttf</string>
+		<string>Gilroy-Heavy.ttf</string>
+		<string>Gilroy-HeavyItalic.ttf</string>
+		<string>Gilroy-Light.ttf</string>
+		<string>Gilroy-LightItalic.ttf</string>
+		<string>Gilroy-Medium.ttf</string>
+		<string>Gilroy-MediumItalic.ttf</string>
+		<string>Gilroy-Regular.ttf</string>
+		<string>Gilroy-RegularItalic.ttf</string>
+		<string>Gilroy-SemiBold.ttf</string>
+		<string>Gilroy-SemiBoldItalic.ttf</string>
+		<string>Gilroy-Thin.ttf</string>
+		<string>Gilroy-ThinItalic.ttf</string>
+		<string>Gilroy-UltraLight.ttf</string>
+		<string>Gilroy-UltraLightItalic.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

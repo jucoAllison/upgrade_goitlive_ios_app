@@ -21,7 +21,7 @@ import Animated, {
   withSequence,
   withDelay,
 } from 'react-native-reanimated';
-import { MainContext } from '../../../../../App';
+import { MainContext } from '../../../../App';
 
 const CountdownTimer = React.lazy(() => import('./countdownTimer'));
 import CommentInput from './commentInput';
@@ -33,11 +33,13 @@ const Bottom = ({
   setMessages,
   scrollToBottom,
   isPrivateLive,
-  username,
+  random,
   _id,
+  // isToComment,
+  // setIsToComment,
 }) => {
-  const [isToComment, setIsToComment] = useState(false)
   const [seconds, setSeconds] = useState(0);
+  const [isToComment, setIsToComment] = useState(false);
   const prevSecondsRef = useRef();
   const [errMsg, setErrMsg] = useState('');
   const [showMsg, setShowMsg] = useState(false);
@@ -130,6 +132,7 @@ const Bottom = ({
             messages={messages}
             scrollToBottom={scrollToBottom}
             setMessages={setMessages}
+            dis_name={random}
           />
         ) : (
           <View

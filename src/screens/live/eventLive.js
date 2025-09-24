@@ -219,6 +219,11 @@ const EventLive = ({
     } else {
       setupVideoSDKEngine();
     }
+
+    
+  // return () => {
+  //   agoraEngine.unregisterEventHandler();
+  // };
   }, [channelName]);
 
   return (

@@ -1,101 +1,512 @@
-import React, {Suspense, useContext, useEffect, useState} from 'react';
+import React, {
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
+  Modal,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
-import {MainContext} from '../../../../../App';
+import Fontisto from 'react-native-vector-icons/Fontisto';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import { MainContext } from '../../../../../App';
+import MappedLivers from './mappedLivers';
+import { useAgoraEngine } from '../../../../../AgoraEngineContext';
+import {
+  ClientRoleType,
+  ChannelProfileType,
+  RtcSurfaceView,
+} from 'react-native-agora';
+import ErrMessage from '../../../../components/errMessage/errMessage';
+import ImgAbc from '../../../../assets/ic_launcher.png';
+import Fallback from '../../../../components/fallback/fallback';
+import Button from '../../../../components/button';
 
-// const EventPersonalPics = React.lazy(() =>
-//   import('../../../myProfile/personalPics/eventPersonalPics'),
-// );
-const ProfileTop = React.lazy(() =>
-  import('../../../../components/profileTop/profileTop'),
-);
-const PrivateProfile = ({
-  user,
-  isUserCaring,
-  loading,
-  setIsUserCaring,
-  navigation,
-  isFocused,
-  getProfileDetails,
-}) => {
+const BottomBtns = lazy(() => import('./bottomBtns'));
+const TopDetailsHere = lazy(() => import('./topDetailsHere'));
+const AllUsersMap = lazy(() => import('./allUsers'));
+const PrivateProfile = ({ setSwipeEnabled }) => {
   const CTX = useContext(MainContext);
-  const [shouldRefresh, setShouldRefresh] = useState({ran: Math.random()});
+  const [shouldRefresh, setShouldRefresh] = useState({ math: 'null' });
   const [refreshing, setRefreshing] = useState(false);
-  // console.log("'user?._id HHERE ==>> ", user?._id);
+  const agoraEngine = useAgoraEngine();
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [remoteUid, setRemoteUid] = useState(0); // Uid of the remote user
+  const [showMsg, setShowMsg] = useState(false);
+  const [errMsg, setErrMsg] = useState('');
+  const [leaving, setLeaving] = useState(false);
+  const [appId, setAppId] = useState(CTX.systemConfig?.A_appId);
+  const [channelName, setChannelName] = useState(null);
+  const [token, setToken] = useState(null);
+  const [uid, setUid] = useState(null);
+  const [timer, setTimer] = useState(5);
+  const [allUsers, setAllUsers] = useState([]);  
+  const [isModal, setIsModal] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      _id: Math.random(),
+      user: {
+        username: `Notice`,
+        img: ImgAbc,
+        verify: true,
+      },
+      msg: 'Welcome to GoItLive!! Enjoy engaging with people in real time; you must be at least eighteen years old.',
+    },
+  ]);
+  const scrollViewRef = useRef();
 
-  const careHandler = async stat => {
-    setIsUserCaring(!isUserCaring);
-    let URLHere = stat
-      ? `${CTX.systemConfig?.p}user/profile/uncare/${user?._id}`
-      : `${CTX.systemConfig?.p}user/profile/care/${user?._id}`;
-    // uncare Here
+  const scrollToBottom = asd => {
+    // if (isAtBottom) {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+    // }
+  };
+
+  const newMessageFromUser = async ({ user, msg, totalUsers }) => {
+    const copiedMessages = messages.slice();
+    const newMessage = {
+      user,
+      msg,
+      totalUsers,
+    };
+
+    copiedMessages.push(newMessage);
+    setMessages(copiedMessages);
+    scrollToBottom();
+  };
+
+  useEffect(() => {
+    if (CTX.socketObj) {
+      CTX.socketObj.on('send-private-room-message', newMessageFromUser);
+      // CTX.socketObj?.emit('join-private-room', {room: CTX.userObj?._id});
+    }
+
+    return () => {
+      CTX.socketObj?.off('send-private-room-message');
+    };
+  }, [CTX.socketObj, messages]);
+
+  useEffect(() => {
+    let interval;
+
+    if (token) {
+      interval = setInterval(() => {
+        if (timer > 0) {
+          setTimer(timer - 1);
+        } else {
+          clearInterval(interval);
+        }
+      }, 1300);
+    }
+
+    return () => clearInterval(interval); // Cleanup on component unmount or when isJoined becomes false
+  }, [token, timer]);
+
+  const join = async () => {
+    if (token) {
+      return;
+    }
+    if (!agoraEngine) {
+      console.warn('Agora engine not ready yet (waiting for appId).');
+      return;
+    }
+    if (joinLoading) return;
+
+    agoraEngine.enableVideo();
+    agoraEngine.registerEventHandler({
+      onJoinChannelSuccess: () => {
+        // showMessage('Successfully joined the channel ' + channelName);
+
+        if (channelName) {
+          setErrMsg('Successfully joined the channel ');
+          setShowMsg(true);
+        }
+        // setIsJoined(true);
+      },
+      onUserJoined: (_connection, Uid) => {
+        // showMessage('Remote user joined with uid ' + Uid);
+        const prev = [...allUsers];
+        prev.unshift(Uid);
+        setAllUsers(prev);
+        setRemoteUid(Uid);
+        setErrMsg('A user joined');
+        setShowMsg(true);
+      },
+      onUserOffline: (_connection, Uid) => {
+        // showMessage('Remote user left the channel. uid: ' + Uid);
+        const prev = [...allUsers];
+
+        setAllUsers(prev.filter(v => v !== Uid));
+
+        setErrMsg('A user left the channel');
+        setShowMsg(true);
+        setRemoteUid(0);
+      },
+    });
+    agoraEngine.initialize({
+      appId: appId,
+      channelProfile: ChannelProfileType.ChannelProfileLiveBroadcasting,
+    });
+
+    // Set video encoder configuration (optional but recommended)
+    agoraEngine?.setVideoEncoderConfiguration({
+      dimensions: { width: 640, height: 360 },
+      frameRate: 15,
+      bitrate: 800,
+      orientationMode: 0, // Adaptative
+    });
+
+    setJoinLoading(true);
     try {
-      const fetching = await fetch(URLHere, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `bearer ${CTX.sessionToken}`,
+      // first create call model data
+      const fetching = await fetch(
+        `${CTX.systemConfig?.ats}private/stream/live/call`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `bearer ${CTX.sessionToken}`,
+          },
         },
+      );
+      const parsedJson = await fetching.json();
+      setJoinLoading(false);
+
+      if (parsedJson?.error) {
+        setErrMsg(parsedJson?.error);
+        setShowMsg(true);
+        return;
+      }
+      setSwipeEnabled(false);
+      await CTX.socketObj?.emit('toggle-isLive', {
+        _id: CTX.userObj._id,
+        toggle: 'isPrivateLive',
+        value: true,
       });
+
+      setToken(parsedJson?.token);
+      setAppId(parsedJson?.appId);
+      setChannelName(parsedJson?.channelName);
+      setUid(parseInt(parsedJson?.uid));
+
+      CTX.socketObj?.emit('join-private-room', {
+        room: parsedJson?.channelName,
+      });
+
+      agoraEngine?.setChannelProfile(
+        ChannelProfileType.ChannelProfileLiveBroadcasting,
+      );
+      agoraEngine?.startPreview();
+      agoraEngine?.joinChannel(
+        parsedJson?.token,
+        parsedJson?.channelName,
+        parsedJson?.uid,
+        {
+          clientRoleType: ClientRoleType.ClientRoleBroadcaster,
+        },
+      );
+    } catch (e) {
+      setJoinLoading(false);
+      setErrMsg('Network request failed');
+      setShowMsg(true);
+      console.log(e);
+    }
+  };
+
+  const leave = async () => {
+    setLeaving(true);
+    try {
+      const fetching = await fetch(
+        `${CTX.systemConfig?.ats}private/stream/end/call/${channelName}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `bearer ${CTX.sessionToken}`,
+          },
+        },
+      );
       const parsedJson = await fetching.json();
 
-      if (parsedJson?.isRemoved) {
-        return CTX.logoutUser();
+      if (parsedJson?.error) {
+        setErrMsg(parsedJson?.error);
+        setShowMsg(true);
+        return;
       }
+      setLeaving(false);
+      setSwipeEnabled(true);
 
-      console.log('error from careHandler => ', parsedJson);
-      // resetUpperArr(parsedJson.data);
-    } catch (error) {
-      // setLoading(false);
-      console.log('error from careHandler => ', error);
-      // setErrMsg('Network request failed');
-      // setShowMsg(true);
+       await CTX.socketObj?.emit('oya-everybody-leave', {
+        room: channelName,
+        user: CTX.userObj._id,
+      });
+
+      await CTX.socketObj?.emit('toggle-isLive', {
+        _id: CTX.userObj._id,
+        toggle: 'isPrivateLive',
+        value: false,
+      });
+      agoraEngine?.leaveChannel();
+
+      CTX.socketObj?.emit('leave-room', { room: channelName });
+
+      setToken(null);
+      setAppId(null);
+      setChannelName(null);
+      setUid(null);
+
+      setRemoteUid(0);
+      // setIsJoined(false);
+      // showMessage('You left the channel');
+    } catch (e) {
+      setLeaving(false);
+      setErrMsg('Network request failed');
+      setShowMsg(true);
+      console.log(e);
     }
   };
 
   const onRefresh = () => {
-    setShouldRefresh({ran: Math.random()});
     setRefreshing(true);
-    getProfileDetails().then(() => setRefreshing(false));
+    setShouldRefresh({ math: Math.random() });
+    setRefreshing(false);
   };
 
   return (
     <>
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        style={{padding: 20, height: '100%', width: '100%'}}>
-        <Suspense
-          fallback={
-            <View style={styles.activityCover}>
-              <ActivityIndicator color={'#0a171e53'} size={40} />
-            </View>
-          }>
-          <ProfileTop
-            profileDetails={user}
-            isUserCaring={isUserCaring}
-            careHandler={careHandler}
-            loading={loading}
-          />
-        </Suspense>
+      {showMsg && (
+        <ErrMessage msg={errMsg} closeErr={() => setShowMsg(false)} />
+      )}
 
-        <View style={{height: 30}}></View>
-        {/* <Suspense fallback={null}>
-          <EventPersonalPics
-            isFocused={isFocused}
-            navigation={navigation}
-            shouldRefresh={shouldRefresh}
-            userID={user?._id}
-          />
-        </Suspense> */}
-      </ScrollView>
+
+
+
+
+
+
+       <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModal}
+        onRequestClose={() => setIsModal(!isModal)}
+      >
+        <Pressable style={styles.centeredView}>
+          <View style={{ ...styles.modalView }}>
+            <>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                <AntDesign
+                  name="disconnect"
+                  size={40}
+                  style={{ marginBottom: 12 }}
+                  color="#e20154"
+                />
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setIsModal(false)}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    width: 34,
+                    height: 34,
+                  }}
+                >
+                  <AntDesign
+                    name="close"
+                    size={20}
+                    style={{ marginLeft: 'auto' }}
+                    color="#555"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <Text
+                style={{
+                  color: '#555',
+                  fontWeight: 'bold',
+                  fontSize: 20,
+                  textAlign: 'center',
+                  marginBottom: 10,
+                }}
+              >
+                End live
+              </Text>
+
+              <Text
+                style={{
+                  color: '#555',
+                  fontWeight: '300',
+                  fontSize: 14,
+                  textAlign: 'center',
+                }}
+              >
+                You want to close live streaming. When you end a stream, it
+                won't be saved
+              </Text>
+
+              <Button
+                loading={leaving}
+                onPress={leave}
+                label={'Continue'}
+                style={{ width: '100%', marginTop: 30, height: 50 }}
+              />
+            </>
+            {/* )} */}
+          </View>
+        </Pressable>
+      </Modal>
+
+
+
+
+
+
+
+
+
+
+      {token ? (
+        <View
+          style={{
+            display: 'flex',
+            backgroundColor: '#000',
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+          }}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              zIndex: 10,
+              // overflow: "scroll"
+              width: '100%',
+            }}
+          >
+            <Suspense fallback={<Fallback />}>
+              {/* {isJoined && ( */}
+              <TopDetailsHere
+                // leaveChannel={leaveChannel}
+            leaveChannel={() => setIsModal(true)}
+                messages={messages}
+                isJoined={token}
+                timer={timer}
+              />
+              {/* )} */}
+
+              {allUsers?.length > 0 && <AllUsersMap allUsers={allUsers} />}
+            </Suspense>
+          </View>
+
+          <RtcSurfaceView canvas={{ uid: 0 }} style={styles.videoView} />
+          {timer > 0 && (
+            <View style={styles.counterTimer}>
+              <Text
+                style={{
+                  // fontWeight: 'bold',
+                  fontSize: 33,
+                  color: '#ffffff',
+                  fontFamily: 'Overpass-Regular',
+                }}
+              >
+                {timer}
+              </Text>
+            </View>
+          )}
+
+          {token && (
+            <Suspense fallback={<Fallback />}>
+              <BottomBtns
+                join={join}
+                isJoined={token}
+                leaveChannel={leave}
+                messages={messages}
+                room={channelName}
+                setMessages={setMessages}
+                scrollToBottom={scrollToBottom}
+                timer={timer}
+                scrollViewRef={scrollViewRef}
+              />
+            </Suspense>
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentInsetAdjustmentBehavior="automatic"
+          style={{
+            display: 'flex',
+            backgroundColor: '#000',
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+          }}
+        >
+          <View style={{ width: '100%', height: 400, paddingTop: 98 }}>
+            <MappedLivers token={token} shouldRefresh={shouldRefresh} />
+          </View>
+          <View
+            style={{
+              height: 250,
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <View style={styles.rememberTextCover}>
+              <Text style={styles.rememberText}>
+                Remember to keep live streaming respectful and to follow our
+                <Text style={{ color: '#00d', paddingLeft: 4 }}>
+                  {' '}
+                  Community Guideline
+                </Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={join}
+              style={styles.startCallHere}
+            >
+              {joinLoading ? (
+                <ActivityIndicator color={'#fff'} size={20} />
+              ) : (
+                <>
+                  <Fontisto name="livestream" color="#fff" size={19} />
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      marginLeft: 4,
+                    }}
+                  >
+                    Go live
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
     </>
   );
 };
@@ -103,26 +514,66 @@ const PrivateProfile = ({
 export default PrivateProfile;
 
 const styles = StyleSheet.create({
-  activityCover: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#ccc',
+  centeredView: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
+    height: Dimensions.get('window').height,
+    // marginTop: 22,
+    backgroundColor: '#00000066',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 7,
+    // height: "90%",
+    padding: 15,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 
-  activiityCover: {
-    width: '80%',
-    height: '100%',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    // justifyContent: 'center',
+  counterTimer: {
+    width: 60,
+    height: 60,
+    borderRadius: 60,
+    backgroundColor: '#202d3499',
+    position: 'absolute',
+    top: Dimensions.get('window').height / 2 - 30, // Adjust as needed
+    left: Dimensions.get('window').width / 2 - 30, // Adjust as needed
+    justifyContent: 'center',
     alignItems: 'center',
   },
-
-  pleaseRetry: {
-    color: '#0a171e',
-    textAlign: 'center',
+  rememberTextCover: {
+    flexWrap: 'nowrap',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomColor: '#d1d1d1',
+    justifyContent: 'center',
+    borderBottomWidth: 2,
+    marginTop: 50,
+  },
+  rememberText: {
+    color: '#fff',
+    fontFamily: 'Gilroy-Medium',
+  },
+  videoView: { width: '100%', height: '100%' },
+  startCallHere: {
+    // backgroundColor: '#00000099',
+    width: 168,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 43,
+    borderRadius: 18,
+    backgroundColor: '#e20154',
+    marginTop: 55,
   },
 });

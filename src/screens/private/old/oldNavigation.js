@@ -2,9 +2,9 @@ import Following from './following/eventFollowing';
 import Private from './anythingAboutPrivate/eventPrivate';
 import PrivateProfile from './eachUserPrivateProfile/eventEachUserPrivateProfile';
 import EventUserProfiles from '../../userProfiles/eventUserProfiles';
-import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
-import {View, Text, StatusBar} from 'react-native';
-import React, {useState} from 'react';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { View, Text, StatusBar } from 'react-native';
+import React, { useState } from 'react';
 
 // import {MainContext} from '../../../../App';
 const Tab = createMaterialTopTabNavigator();
@@ -31,18 +31,19 @@ const OldNavigation = () => {
         keyboardDismissMode="on-drag"
         initialRouteName="otherPrivate"
         screenOptions={{
-          swipeEnabled: false,
+          swipeEnabled: swipeEnabled,
           tabBarActiveTintColor: '#fff',
-          tabBarStyle: {backgroundColor: '#0a171e'},
-          tabBarIndicatorStyle: {backgroundColor: '#fff', height: 3},
-        }}>
+          tabBarStyle: { backgroundColor: '#0a171e' },
+          tabBarIndicatorStyle: { backgroundColor: '#fff', height: 3 },
+        }}
+      >
         <Tab.Screen
-          options={{tabBarStyle: {display: 'none'}}}
+          options={{ tabBarStyle: { display: 'none' } }}
           name="personalPrivate"
           component={Following}
         />
         <Tab.Screen
-          options={{tabBarStyle: {display: 'none'}}}
+          options={{ tabBarStyle: { display: 'none' } }}
           name="otherPrivate"
           // component={Private}
           children={() => (
@@ -54,10 +55,15 @@ const OldNavigation = () => {
         />
         <Tab.Screen
           name="privateProfiles"
-          options={{tabBarStyle: {display: 'none'}}}
-          component={PrivateProfile}
+          options={{ tabBarStyle: { display: 'none' } }}
+          children={() => (
+            <PrivateProfile
+              swipeEnabled={swipeEnabled}
+              setSwipeEnabled={setSwipeEnabled}
+            />
+          )}
           // component={EventUserProfiles}
-          initialParams={{user: {username: ''}}}
+          initialParams={{ user: { username: '' } }}
         />
       </Tab.Navigator>
     </>

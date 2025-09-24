@@ -188,7 +188,7 @@ const Live = ({
                   height: 280,
                 }}
               >
-                <Lottie source={LiveLot} autoPlay loop />
+                <Lottie source={LiveLot} autoPlay loop style={{width: 0, height: 0}} />
               </View>
 
               <View style={styles.rememberTextCover}>
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   rememberText: {
     color: '#fff',
-    fontFamily: 'Overpass-Regular',
+    fontFamily: 'Gilroy-Medium',
   },
 
   startCallHere: {

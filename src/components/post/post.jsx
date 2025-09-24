@@ -37,65 +37,56 @@ const Bottom = React.lazy(() => import('./bottom'));
 const Right = React.lazy(() => import('./right'));
 const RemoveMoneyCom = React.lazy(() => import('./removeMoney'));
 
+function modifyCloudinaryUrl(url) {
+  const uploadSegment = '/upload/';
+  const existingTransformations = 'sp_auto/'; // Define the existing transformations to be moved
+  // const transformation = "q_auto:best,sp_auto/";
+  const transformation = 'q_auto:best/';
+  // const transformation = 'q_99:qmax_99/';
+
+  // Find the position of the /upload/ segment
+  const position = url?.indexOf(uploadSegment) + uploadSegment.length;
+
+  // Check if the URL already contains sp_auto
+  if (url?.includes(existingTransformations)) {
+    // Remove the existing sp_auto from the original URL
+    const urlWithoutExistingTransformations = url?.replace(
+      existingTransformations,
+      '',
+    );
+    // Insert the combined transformation right after /upload/
+    const modifiedUrl =
+      urlWithoutExistingTransformations?.slice(0, position) +
+      transformation +
+      urlWithoutExistingTransformations?.slice(position);
+    // console.log("FESS modifiedUrl HERER!!! =>> ", modifiedUrl);
+    return modifiedUrl;
+  } else {
+    // Insert the transformation right after /upl?oad/ if sp_auto is not present
+    const modifiedUrl =
+      url?.slice(0, position) + transformation + url?.slice(position);
+    // console.log("SECOND modifiedUrl HERER!!! =>> ", modifiedUrl);
+    return modifiedUrl;
+  }
+}
+
 // function modifyCloudinaryUrl(url) {
 //   const uploadSegment = '/upload/';
-//   const existingTransformations = 'sp_auto/'; // Define the existing transformations to be moved
-//   // const transformation = "q_auto:best,sp_auto/";
-//   const transformation = 'q_auto:best/';
-//   // const transformation = 'q_99:qmax_99/';
-
-//   // Find the position of the /upload/ segment
-//   const position = url?.indexOf(uploadSegment) + uploadSegment.length;
-
-//   // Check if the URL already contains sp_auto
-//   if (url?.includes(existingTransformations)) {
-//     // Remove the existing sp_auto from the original URL
-//     const urlWithoutExistingTransformations = url?.replace(
-//       existingTransformations,
-//       '',
-//     );
-//     // Insert the combined transformation right after /upload/
-//     const modifiedUrl =
-//       urlWithoutExistingTransformations?.slice(0, position) +
-//       transformation +
-//       urlWithoutExistingTransformations?.slice(position);
-//     // console.log("FESS modifiedUrl HERER!!! =>> ", modifiedUrl);
-//     return modifiedUrl;
-//   } else {
-//     // Insert the transformation right after /upl?oad/ if sp_auto is not present
-//     const modifiedUrl =
-//       url?.slice(0, position) + transformation + url?.slice(position);
-//     // console.log("SECOND modifiedUrl HERER!!! =>> ", modifiedUrl);
-//     return modifiedUrl;
-//   }
+//   const position = url.indexOf(uploadSegment) + uploadSegment.length;
+  
+//   // Our desired transformations (before sp_auto)
+//   const transformation = 'q_auto:eco,f_auto,vc_h265,br_500k,sp_auto/';
+  
+//   // Remove any existing transformations (like old sp_auto)
+//   const urlWithoutExisting = url.replace(/([^/]+,)*sp_auto\//, '');
+  
+//   // Insert the new transformations
+//   return (
+//     urlWithoutExisting.slice(0, position) +
+//     transformation +
+//     urlWithoutExisting.slice(position)
+//   );
 // }
-
-function modifyCloudinaryUrl(url) {
-  if (!url) return url;
-
-  const uploadSegment = '/upload/';
-  const position = url.indexOf(uploadSegment) + uploadSegment.length;
-
-  // Default mobile-friendly transformations
-  // - q_auto:eco → balance quality vs. speed
-  // - f_auto → best format for device
-  // - br_500k → mobile friendly bitrate
-  // - vc_auto → automatically picks h265 if supported, otherwise h264
-  const transformation = 'q_auto:eco,f_auto,br_500k,vc_auto/';
-
-  // Remove any existing sp_auto or q_auto etc.
-  let cleanedUrl = url
-    .replace(/sp_auto[\/,]*/g, '')
-    .replace(/q_auto:[^,\/]+[\/,]*/g, '')
-    .replace(/br_\d+k[\/,]*/g, '')
-    .replace(/vc_[^,\/]+[\/,]*/g, '');
-
-  // Insert the new transformation right after /upload/
-  const modifiedUrl =
-    cleanedUrl.slice(0, position) + transformation + cleanedUrl.slice(position);
-
-  return modifiedUrl;
-}
 
 const Post = ({
   item,
@@ -247,13 +238,19 @@ const Post = ({
     return () => unloadVideo();
   }, []);
 
-  // const modifiedUrl = modifyCloudinaryUrl(item?.video);
-  const modifiedUrl = useMemo(
-    () => modifyCloudinaryUrl(item?.video),
-    [item?.video],
-  );
+  const modifiedUrl = modifyCloudinaryUrl(item?.video);
+  // const modifiedUrl = useMemo(
+  //   () => modifyCloudinaryUrl(item?.video),
+  //   [item?.video],
+  // );
 
-  // console.log("active || isPlaying || videoLoad || pauseOverRide =>> ", active, isPlaying, videoLoad , pauseOverRide);
+//   const modifiedUrl = item?.video.replace(
+//   '/upload/',
+//   '/upload/br_500k,vc_auto/'
+// );
+
+  // console.log("Final Cloudinary video URL =>", item?.video);
+  // console.log("modifiedUrl Cloudinary video URL =>", modifiedUrl);
 
   return (
     <View style={styles.container}>
@@ -263,7 +260,7 @@ const Post = ({
         numberOfTaps={1}
       >
         <View style={styles.videoContainer}>
-          {!isSecondVideoReady && (
+          {/* {!isSecondVideoReady && (
             <Video
               resizeMode={item?.isCover ? 'cover' : 'contain'}
               source={{
@@ -272,7 +269,7 @@ const Post = ({
               ref={ref => (videoRefs.current[index] = ref)}
               style={styles.video}
               paused={
-                active || !isPlaying || videoLoad || pauseOverRide || isPaused
+                 !isPlaying || videoLoad || pauseOverRide || isPaused
               }
               // paused={true}
               onProgress={progressHandler}
@@ -296,7 +293,7 @@ const Post = ({
               shouldPlay={false}
               useNativeControls={true}
             />
-          )}
+          )} */}
 
           <Video
             // onPlaybackStatusUpdate={onPlaybackStatusUpdate}
@@ -315,12 +312,12 @@ const Post = ({
             }
             onProgress={progressHandler}
             onError={e => {
-              Alert.alert('Error', e?.error?.localizedDescription, [
-                {
-                  text: 'Close',
-                  onPress: () => console.log('Close pressed'),
-                },
-              ]);
+              // Alert.alert('Error', e?.error?.localizedDescription, [
+              //   {
+              //     text: 'Close',
+              //     onPress: () => console.log('Close pressed'),
+              //   },
+              // ]);
 
               console.log('ERROR!! from onError => ', e);
             }}
@@ -331,7 +328,7 @@ const Post = ({
             repeat={true}
             onEnd={onEndHandler}
             onBuffer={onBufferHandler}
-            preferredDecoder={'software'}
+            // preferredDecoder={'software'}
             shouldPlay={false}
             useNativeControls={true}
           />

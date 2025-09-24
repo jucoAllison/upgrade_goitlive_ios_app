@@ -57,13 +57,13 @@ import Fallback from './src/components/fallback/fallback';
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
-  const url = 'https://api.goitlive.com/api/v3/';
-  const webSocketURL = 'wss://api.goitlive.com';
-  const mainUrl = 'https://api.goitlive.com/';
+  // const url = 'https://api.goitlive.com/api/v3/';
+  // const webSocketURL = 'wss://api.goitlive.com';
+  // const mainUrl = 'https://api.goitlive.com/';
 
-  // const url = 'http://172.20.10.3:5017/api/v3/';
-  // const webSocketURL = 'ws://172.20.10.3:5017';
-  // const mainUrl = 'http://172.20.10.3:5017/';
+  const url = 'http://172.20.10.3:5017/api/v3/';
+  const webSocketURL = 'ws://172.20.10.3:5017';
+  const mainUrl = 'http://172.20.10.3:5017/';
 
   const [socketObj, setSocketObj] = useState(null);
   const [token, setToken] = useState(null);

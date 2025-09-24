@@ -211,7 +211,6 @@ const EventUploadPrivate = ({}) => {
         }>
         <Upload
           uploadVideo={PostCTX.uploadVideo}
-          setVideo={PostCTX.setVideo}
           showBottomSheetHandler={showBottomSheetHandler}
           // uploadVideoToServer={}
         />

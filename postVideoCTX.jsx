@@ -32,6 +32,7 @@ const PostVideoCTX = () => {
   );
   const [isCover, setIsCover] = useState(true);
   const [errMsg, setErrMsg] = useState('');
+  const [showMsg, setShowMsg] = useState(false);
   const [isUploadingNew, setIsUploadingNew] = useState(false);
   const [duration, setDuration] = useState(0);
   const [msgInput, setMsgInput] = useState('');
@@ -258,6 +259,7 @@ const PostVideoCTX = () => {
       setUpLoading(false);
       console.error('Upload failed:', error);
       console.error('Upload failed:', error?.message);
+      console.error('Upload failed:', error?.response);
       createThreeButtonAlert(
         'Unable to upload video, Video file not supported',
       );
@@ -293,6 +295,8 @@ const PostVideoCTX = () => {
       value={{
         errMsg,
         setErrMsg,
+        setShowMsg,
+        showMsg,
         uploadVideo,
         setVideo,
         isCover,

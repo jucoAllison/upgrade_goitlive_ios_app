@@ -92,7 +92,7 @@ const Right = ({
           onPress={() => {
             // console.log("dsfdsf sdgdsg");
 
-            navigation.navigate('userProfiles', {
+            navigation.navigate('HELLO_WORLD', {
               ...item?.user,
               isCaring: item?.isCaring,
             });

@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
+  ScrollView,
 } from 'react-native';
-import React, {useCallback, useContext, useState} from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {useNavigation, useRoute} from '@react-navigation/core';
+import { useNavigation, useRoute } from '@react-navigation/core';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Clipboard from '@react-native-community/clipboard';
 import Animated, {
@@ -24,7 +25,7 @@ import Animated, {
 
 import roundLogo from '../../assets/round-colored-logo.png';
 import styles from '../verification/verification.styles';
-import {MainContext} from '../../../App';
+import { MainContext } from '../../../App';
 import DismissKeyboardWrapper from '../../components/dismissKeyboard';
 const SerialCode = () => {
   const CTX = useContext(MainContext);
@@ -70,24 +71,28 @@ const SerialCode = () => {
   return (
     <DismissKeyboardWrapper>
       <ImageBackground
-        source={{uri: CTX.systemConfig?.loginBackgroundImageUrl}}
-        style={classes.styleLandingLogo}>
+        source={{ uri: CTX.systemConfig?.loginBackgroundImageUrl }}
+        style={classes.styleLandingLogo}
+      >
         <StatusBar
           animated={true}
           backgroundColor={CTX.statusBarColor}
           hidden={true}
         />
-        <View
-          style={{
-            width: '100%',
-            padding: 20,
-            flex: 1,
 
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#00000098',
-          }}></View>
-        {/* <TouchableOpacity activeOpacity={0.8}
+        <ScrollView>
+          <View
+            style={{
+              width: '100%',
+              padding: 20,
+              flex: 1,
+
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#00000098',
+            }}
+          ></View>
+          {/* <TouchableOpacity activeOpacity={0.8}
           style={styles.backTouchableOpacity}
           onPress={() => navigation.navigate('Number')}>
           <MaterialIcons
@@ -97,91 +102,99 @@ const SerialCode = () => {
           color={'#fff'}
           />
           </TouchableOpacity> */}
-        <View style={classes.positionAbsoluteView}>
-          <Animated.View style={[classes.roundLogoCover, animatedStyles]}>
-            <Image source={roundLogo} style={classes.roundImage} />
-          </Animated.View>
+          <View style={classes.positionAbsoluteView}>
+            <Animated.View style={[classes.roundLogoCover, animatedStyles]}>
+              <Image source={roundLogo} style={classes.roundImage} />
+            </Animated.View>
 
-          <View style={classes.boxCover}>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Fast</Text>
+            <View style={classes.boxCover}>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Fast</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Powerful</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Secure</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Private</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Unlimited</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Synced</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>100% free and open</Text>
+              </View>
+              <View style={classes.eachBox}>
+                <Text style={classes.eachTextBox}>Reliable</Text>
+              </View>
             </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Powerful</Text>
-            </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Secure</Text>
-            </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Private</Text>
-            </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Unlimited</Text>
-            </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Synced</Text>
-            </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>100% free and open</Text>
-            </View>
-            <View style={classes.eachBox}>
-              <Text style={classes.eachTextBox}>Reliable</Text>
-            </View>
-          </View>
 
-          <Text
-            style={{
-              ...styles.whatsYourNumber,
-              marginTop: 20,
-              marginBottom: 10,
-            }}>
-            Backup Code
-          </Text>
-          <Text
-            style={{
-              ...styles.whatsYourNumber,
-              fontSize: 17,
-              fontWeight: '400',
-              fontFamily: 'Gilroy-Medium',
-            }}>
-            Your backup code helps you login into another device. Copy and keep
-            it safe, no one from GoitLive will ever ask for it.
-          </Text>
-
-          <View style={styles.textInputLinkCover}>
-            <FontAwesome name="qrcode" size={22} color="#3b3b3b" />
-            <Text style={{...styles.inputTextInput, color: '#3b3b3b'}}>
-              {route?.params?.backup_words}
+            <Text
+              style={{
+                ...styles.whatsYourNumber,
+                marginTop: 20,
+                marginBottom: 10,
+              }}
+            >
+              Backup Code
+            </Text>
+            <Text
+              style={{
+                ...styles.whatsYourNumber,
+                fontSize: 17,
+                fontWeight: '400',
+                fontFamily: 'Gilroy-Medium',
+              }}
+            >
+              Your backup code helps you login into another device. Copy and
+              keep it safe, no one from GoitLive will ever ask for it.
             </Text>
 
-            <Pressable
-              onPress={() => copySerialCode(route?.params?.backup_words)}
-              style={styles.copyHandler}>
-              <Text
-                style={{
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  fontFamily: 'Gilroy-Black',
-                }}>
-                {copyText}
+            <View style={styles.textInputLinkCover}>
+              <FontAwesome name="qrcode" size={22} color="#3b3b3b" />
+              <Text style={{ ...styles.inputTextInput, color: '#3b3b3b' }}>
+                {route?.params?.backup_words}
               </Text>
-            </Pressable>
-          </View>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => redirectHome()}
-            style={{paddingTop: 10, width: '100%'}}>
-            <View style={styles.eachBtnCover}>
-              <Text style={styles.eachBtnText}>Start</Text>
+              <Pressable
+                onPress={() => copySerialCode(route?.params?.backup_words)}
+                style={styles.copyHandler}
+              >
+                <Text
+                  style={{
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    fontFamily: 'Gilroy-Black',
+                  }}
+                >
+                  {copyText}
+                </Text>
+              </Pressable>
             </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('AppEventFeatures')}>
-            <Text style={classes.beta_version}>Beta Version</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => redirectHome()}
+              style={{ paddingTop: 10, width: '100%' }}
+            >
+              <View style={styles.eachBtnCover}>
+                <Text style={styles.eachBtnText}>Start</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('AppEventFeatures')}
+              style={{ marginBottom: 20, paddingBottom: 20 }}
+            >
+              <Text style={classes.beta_version}>Beta Version</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </ImageBackground>
     </DismissKeyboardWrapper>
   );

@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {useNavigation} from '@react-navigation/core';
+import { useNavigation } from '@react-navigation/core';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'react-native-image-picker';
@@ -27,8 +27,8 @@ import styles from './styles';
 import SvgUpload from '../../assets/upload.png';
 import Button from '../../components/button';
 import Unsupported from '../../assets/unsupported.png';
-import {MainContext} from '../../../App';
-import {PostContext} from '../../../postVideoCTX';
+import { MainContext } from '../../../App';
+import { PostContext } from '../../../postVideoCTX';
 const CommentSections = React.lazy(() => import('./commentSections'));
 const Upload = ({
   uploadVideo,
@@ -43,10 +43,13 @@ const Upload = ({
   const playerRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showComment, setShowComment] = useState(false);
+  const [validating, setValidating] = useState(false);
 
   const selectVideoHandler = () => {
+    if (validating) return;
     const calcTimeFrame = CTX.userObj?.monetize ? 600 : 120;
     setIsPaused(true);
+    setValidating(true);
 
     ImagePicker.launchImageLibrary(
       {
@@ -59,6 +62,9 @@ const Upload = ({
         durationLimit: 60,
       },
       response => {
+        // console.log('response HERE!! =>>> ', response, calcTimeFrame);
+        setValidating(false);
+
         if (response.errorCode) {
           console.log('ImagePicker Error: ', response);
           createThreeButtonAlert(response.errorMessage || 'Permission needed');
@@ -67,17 +73,28 @@ const Upload = ({
 
         if (response.assets) {
           if (response.assets[0]?.duration > calcTimeFrame) {
-            PostCTX.setErrMsg(
-              CTX.userObj?.monetize
+            // console.log(
+            //   'response.assets[0]?.duration =>>> ',
+            //   response.assets[0]?.duration,
+            // );
+            // const ddd = CTX.userObj?.monetize
+            //   ? 'Video file size is too big, 10 minutes video is enough'
+            //   : 'Video must be at least a one minute video';
+            // PostCTX.setErrMsg(ddd);
+            // PostCTX.setShowMsg(true);
+
+            setTimeout(() => {
+              const ddd = CTX.userObj?.monetize
                 ? 'Video file size is too big, 10 minutes video is enough'
-                : 'Video must be at least a one minute video',
-            );
-            PostCTX.setShowMsg(true);
+                : 'Video must be at least a one minute video';
+              PostCTX.setErrMsg(ddd);
+              PostCTX.setShowMsg(true);
+            }, 0);
             return;
           }
 
           setIsVideo(response.assets[0]?.type?.includes('video'));
-          PostCTX.setVideo({...response.assets[0]});
+          PostCTX.setVideo({ ...response.assets[0] });
           // conpressVideoHere(response.assets[0]);
 
           // console.log("RNFS.TemporaryDirectoryPath =>>> ");
@@ -112,13 +129,15 @@ const Upload = ({
         style={styles.container}
         contentContainerStyle={{
           alignItems: 'center',
-        }}>
+        }}
+      >
         <View style={styles.firstVersion}>
           <Pressable
             onPress={() => {
               navigation.replace('Navigation');
               PostCTX?.setIsUploadingNew(false);
-            }}>
+            }}
+          >
             <AntDesign name="close" size={30} color="#000" />
           </Pressable>
         </View>
@@ -129,7 +148,8 @@ const Upload = ({
               <View style={styles.activityCover}>
                 <ActivityIndicator color={'#fff'} size={40} />
               </View>
-            }>
+            }
+          >
             <CommentSections
               setShowComment={setShowComment}
               uploadVideo={uploadVideo}
@@ -140,136 +160,184 @@ const Upload = ({
         ) : (
           <>
             {/* {!uploadVideo ? ( */}
-            {!uploadVideo && <View style={{width: '100%', padding: 20}}>
-              <Text
-                style={{
-                  ...styles.hiCover,
-                  // fontFamily: "SofiaSansSemiCondensed-Regular",
-                  fontFamily: 'Overpass-Regular',
-                  // textTransform: 'capitalize',
-                }}>
-                Hi {CTX?.userObj?.username},
-              </Text>
-
-              {CTX.userObj?.monetize && CTX.userObj?.private_life ? (
+            {!uploadVideo && (
+              <View style={{ width: '100%', padding: 20 }}>
                 <Text
                   style={{
-                    ...styles.secondVersionBody,
-                    fontFamily: 'Overpass-Regular',
-                  }}>
-                  Your account is monetized. you can now upload up to a 5
-                  minutes video on your private live account.
+                    ...styles.hiCover,
+                    // fontFamily: "SofiaSansSemiCondensed-Regular",
+                    fontFamily: 'Gilroy-Bold',
+                    // textTransform: 'capitalize',
+                  }}
+                >
+                  Hi {CTX?.userObj?.username},
                 </Text>
-              ) : !CTX.userObj?.monetize && CTX.userObj?.private_life ? (
-                <View>
+
+                {CTX.userObj?.monetize && CTX.userObj?.private_life ? (
                   <Text
                     style={{
                       ...styles.secondVersionBody,
-                      fontFamily: 'Overpass-Regular',
-                    }}>
-                    You are about to change your private live video. Upload more
-                    interesting videos to get more audience so you can actually
-                    get your account monetize.
+                      fontFamily: 'Gilroy-Regular',
+                    }}
+                  >
+                    Your account is monetized. you can now upload up to a 5
+                    minutes video on your private live account.
                   </Text>
+                ) : !CTX.userObj?.monetize && CTX.userObj?.private_life ? (
+                  <View>
+                    <Text
+                      style={{
+                        ...styles.secondVersionBody,
+                        fontFamily: 'Gilroy-Regular',
+                      }}
+                    >
+                      You are about to change your private live video. Upload
+                      more interesting videos to get more audience so you can
+                      actually get your account monetize.
+                    </Text>
+                    <Text
+                      style={{
+                        color: 'blue',
+                        fontSize: 15,
+                        fontWeight: 'bold',
+                        marginTop: 10,
+                      }}
+                    >
+                      Learn more
+                    </Text>
+                  </View>
+                ) : (
                   <Text
                     style={{
-                      color: 'blue',
-                      fontSize: 15,
-                      fontWeight: 'bold',
-                      marginTop: 10,
-                    }}>
-                    Learn more
+                      ...styles.secondVersionBody,
+                      fontFamily: 'Gilroy-Regular',
+                    }}
+                  >
+                    You are one step to access the private live section please
+                    upload at least a one minute video.
                   </Text>
-                </View>
-              ) : (
-                <Text
-                  style={{
-                    ...styles.secondVersionBody,
-                    fontFamily: 'Overpass-Regular',
-                  }}>
-                  You are one step to access the private live section please
-                  upload at least a one minute video.
-                </Text>
-              )}
-            </View>}
+                )}
+              </View>
+            )}
 
             <View
               style={{
                 width: '100%',
                 justifyContent: 'center',
                 alignItems: 'center',
-              }}>
-              {!uploadVideo && !isVideo ? (
-                <Image
-                  style={{...styles.imageHere, marginLeft: 30}}
-                  source={SvgUpload}
-                />
-              ) : uploadVideo && !isVideo ? (
-                <View style={styles.backgroundVideoCover}>
-                  <Image
-                    style={{...styles.imageHere, width: '100%'}}
-                    source={Unsupported}
-                  />
-                  <Text
-                    style={{color: 'red', textAlign: 'center', marginTop: 10}}>
-                    {PostCTX.errMsg?.length > 1
-                      ? PostCTX.errMsg
-                      : ' Unsupported file type'}
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  {isCompression ? (
-                    //  video is compressing
-                    <Pressable
+              }}
+            >
+              {
+                // PostCTX.showMsg ? (
+                //   <View style={styles.backgroundVideoCover}>
+                //     <Image
+                //       style={{ ...styles.imageHere, width: '100%' }}
+                //       source={Unsupported}
+                //     />
+                //     <Text
+                //       style={{
+                //         color: 'red',
+                //         textAlign: 'center',
+                //         marginTop: 10,
+                //         fontFamily: 'Gilroy-Medium',
+                //       }}
+                //     >
+                //       {PostCTX.errMsg?.length > 1
+                //         ? PostCTX.errMsg
+                //         : ' Unsupported file type'}
+                //     </Text>
+                //   </View>
+                // ) :
+
+                PostCTX.showMsg?.length > 2 && uploadVideo && !isVideo  ? (
+                  <View style={styles.backgroundVideoCover}>
+                    <Image
+                      style={{ ...styles.imageHere, width: '100%' }}
+                      source={Unsupported}
+                    />
+                    <Text
                       style={{
-                        ...styles.backgroundVideoCover,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '80%',
-                      }}>
-                      <Text
-                        style={{...styles.secondVersionBody, marginBottom: 20}}>
-                        {compressingMsg}
-                      </Text>
-                    </Pressable>
-                  ) : (
-                    <>
+                        color: 'red',
+                        textAlign: 'center',
+                        marginTop: 10,
+                        fontFamily: 'Gilroy-Medium',
+                      }}
+                    >
+                      {PostCTX.errMsg?.length > 1
+                        ? PostCTX.errMsg
+                        : ' Unsupported file type'}
+                    </Text>
+                  </View>
+                ) : !uploadVideo && !isVideo ? (
+                  <Image
+                    style={{ ...styles.imageHere, marginLeft: 30 }}
+                    source={SvgUpload}
+                  />
+                ) : (
+                  <>
+                    {isCompression ? (
+                      //  video is compressing
                       <Pressable
-                        onPress={() => setIsPaused(!isPaused)}
-                        style={{...styles.backgroundVideoCover}}>
-                        {isPaused && (
-                          <Pressable
-                            onPress={() => setIsPaused(false)}
-                            style={styles.pausedIcon}>
-                            <Ionicon name="play" color="#a5a5a597" size={68} />
-                          </Pressable>
-                        )}
-
-                        <Video
-                          source={{
-                            uri: uploadVideo?.uri,
+                        style={{
+                          ...styles.backgroundVideoCover,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '80%',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            ...styles.secondVersionBody,
+                            marginBottom: 20,
                           }}
-                          style={styles.backgroundVideo}
-                          repeat={true}
-                          // onBuffer={this.onBuffer}
-                          ref={playerRef}
-                          resizeMode={PostCTX.isCover ? 'cover' : 'contain'}
-                          paused={isPaused}
-                          onError={showErrorHandler}
-                          // onProgress={progressHandler}
-                          onLoad={onLoadHandler} // this will set first frame of video as thumbnail
-                          preferredDecoder={'software'}
-                        />
+                        >
+                          {compressingMsg}
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <>
+                        <Pressable
+                          onPress={() => setIsPaused(!isPaused)}
+                          style={{ ...styles.backgroundVideoCover }}
+                        >
+                          {isPaused && (
+                            <Pressable
+                              onPress={() => setIsPaused(false)}
+                              style={styles.pausedIcon}
+                            >
+                              <Ionicon
+                                name="play"
+                                color="#a5a5a597"
+                                size={68}
+                              />
+                            </Pressable>
+                          )}
 
-                        {/* <Text style={styles.selectedFileName}>
+                          <Video
+                            source={{
+                              uri: uploadVideo?.uri,
+                            }}
+                            style={styles.backgroundVideo}
+                            repeat={true}
+                            // onBuffer={this.onBuffer}
+                            ref={playerRef}
+                            resizeMode={PostCTX.isCover ? 'cover' : 'contain'}
+                            paused={isPaused}
+                            onError={showErrorHandler}
+                            // onProgress={progressHandler}
+                            onLoad={onLoadHandler} // this will set first frame of video as thumbnail
+                            preferredDecoder={'software'}
+                          />
+
+                          {/* <Text style={styles.selectedFileName}>
                           {uploadVideo?.fileName}
                         </Text> */}
-                      </Pressable>
-                    </>
-                  )}
-                </>
-              )}
+                        </Pressable>
+                      </>
+                    )}
+                  </>
+                )
+              }
             </View>
           </>
         )}
@@ -280,13 +348,15 @@ const Upload = ({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setShowComment(false)}
-              style={styles.editIconHereCover}>
+              style={styles.editIconHereCover}
+            >
               <Text
                 style={{
                   color: '#e20154',
                   fontWeight: 'bold',
                   fontSize: 14,
-                }}>
+                }}
+              >
                 Back
               </Text>
             </TouchableOpacity>
@@ -304,24 +374,27 @@ const Upload = ({
           <>
             {isVideo ? (
               <>
-                <View style={{flexDirection: 'row'}}>
+                <View style={{ flexDirection: 'row' }}>
                   <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={selectVideoHandler}
-                    style={styles.editIconHereCover}>
+                    style={styles.editIconHereCover}
+                  >
                     <Text
                       style={{
                         color: '#e20154',
                         fontWeight: 'bold',
                         fontSize: 14,
-                      }}>
+                      }}
+                    >
                       Change Video
                     </Text>
                   </TouchableOpacity>
 
                   <Pressable
                     onPress={() => PostCTX.setIsCover(!PostCTX.isCover)}
-                    style={styles.setIsCover}>
+                    style={styles.setIsCover}
+                  >
                     <MaterialCommunityIcons
                       size={37}
                       name={PostCTX.isCover ? 'contain' : 'resize'}
@@ -341,14 +414,15 @@ const Upload = ({
               </>
             ) : (
               <>
-                <View style={{width: '65%'}}>
+                <View style={{ width: '65%' }}>
                   <Text
                     style={{
                       ...styles.hiCover,
                       paddingVertical: 0,
                       fontSize: 18,
                       marginTop: 0,
-                    }}>
+                    }}
+                  >
                     Browse file
                   </Text>
 
@@ -357,7 +431,8 @@ const Upload = ({
                       color: '#555555',
                       fontSize: 12,
                       fontFamily: 'Gilroy-Bold',
-                    }}>
+                    }}
+                  >
                     {CTX.userObj?.monetize && CTX.userObj?.private_life
                       ? 'Any video file, 10 minutes maximum.'
                       : 'Any video file, 1 minutes maximum.'}
@@ -369,6 +444,7 @@ const Upload = ({
                     width: 110,
                     height: 40,
                   }}
+                  loading={validating}
                   onPress={() =>
                     uploadVideo && isVideo
                       ? setShowComment(true)

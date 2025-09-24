@@ -56,9 +56,9 @@ const CommentSections = ({ showBottomSheetHandler}) => {
         },
       );
       const parsedJson = await fetching.json();
-      if (parsedJson?.isRemoved) {
-        return CTX.logoutUser();
-      }
+      // if (parsedJson?.isRemoved) {
+      //   return CTX.logoutUser();
+      // }
       if (parsedJson?.error) {
         setLoading(false);
         setTagErrMsg(parsedJson?.msg);
@@ -116,9 +116,9 @@ const CommentSections = ({ showBottomSheetHandler}) => {
         },
       );
       const parsedJson = await fetching.json();
-      if (parsedJson?.isRemoved) {
-        return CTX.logoutUser();
-      }
+      // if (parsedJson?.isRemoved) {
+      //   return CTX.logoutUser();
+      // }
       setLoading(false);
       // setTagShowMsg(false);
       // setTagErrMsg('');

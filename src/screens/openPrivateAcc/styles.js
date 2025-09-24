@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
     margin: 'auto',
     alignSelf: 'center',
     marginTop: 40,
+    marginBottom: 20,
     height: 290,
   },
   backgroundVideoCover: {

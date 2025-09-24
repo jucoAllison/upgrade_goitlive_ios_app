@@ -1,14 +1,14 @@
 import {
   View,
   Text,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
   Dimensions,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
   Keyboard,
+  Platform,
   LayoutAnimation,
   ScrollView,
-  Image,
 } from 'react-native';
 import React, {
   Suspense,
@@ -17,26 +17,22 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { MainContext } from '../../../App';
+import DismissKeyboardWrapper from '../../components/dismissKeyboard';
+import Fallback from '../../components/fallback/fallback';
 import { RtcSurfaceView } from 'react-native-agora';
 import LinearGradient from 'react-native-linear-gradient';
 
-import ImgAbc from '../../../assets/ic_launcher.png';
-import { MainContext } from '../../../../App';
-import Fallback from '../../../components/fallback/fallback';
-import DismissKeyboardWrapper from '../../../components/dismissKeyboard';
+import ImgAbc from '../../assets/ic_launcher.png';
 const Bottom = React.lazy(() => import('./bottom/bottom'));
 const JoinedLiveHeader = React.lazy(() => import('./joinedLiveHeader'));
-const ListedLives = ({
+const JoinPrivateLive = ({
+  isSetting,
+  random,
+  remoteUid,
   item,
   leave,
-  index,
-  currentVideoIndex,
-  isPlaying,
-  loading,
-  isSetting,
-  remoteUid,
-  isToComment,
-  setIsToComment,
+  channelName,
 }) => {
   const CTX = useContext(MainContext);
   const [showBottomStm, setShowBottomStm] = useState(false);
@@ -127,10 +123,12 @@ const ListedLives = ({
   useEffect(() => {
     if (CTX.socketObj) {
       CTX.socketObj.on('send-private-room-message', newMessageFromUser);
+      CTX.socketObj.on('every-body-leave', leave);
     }
 
     return () => {
       CTX.socketObj?.off('send-private-room-message');
+      CTX.socketObj?.off('every-body-leave');
     };
   }, [CTX.socketObj, messages]);
 
@@ -159,6 +157,10 @@ const ListedLives = ({
     };
   }, []);
 
+  // console.log("remoteUid =>>> ", remoteUid);
+
+  // console.log("channelName =>>> ", channelName);
+
   return (
     <DismissKeyboardWrapper>
       <Pressable
@@ -166,10 +168,13 @@ const ListedLives = ({
         style={styles.scroll}
       >
         <Suspense fallback={<Fallback />}>
-          <JoinedLiveHeader showBottomStm={false} item={item} />
+          <JoinedLiveHeader
+            showBottomStm={false}
+            item={{ ...item?.owner, is_user_caring: true }}
+          />
         </Suspense>
         <View style={styles.fullCam}>
-          {loading || isSetting ? (
+          {/* {loading || isSetting ? (
             <View style={styles.coverLoading}>
               <View style={styles.loadCover}>
                 <ActivityIndicator size={32} color="#fff" />
@@ -180,15 +185,15 @@ const ListedLives = ({
             </View>
           ) : (
             <>
-              {remoteUid != 0 ? (
-                <React.Fragment key={remoteUid}>
-                  <RtcSurfaceView
-                    canvas={{ uid: remoteUid }}
-                    connection={{ channelId: item?.channelName }} // ✅ add this
-                    style={styles.videoView}
-                  />
-                </React.Fragment>
-              ) : (
+              {remoteUid != 0 ? ( */}
+          <React.Fragment key={remoteUid}>
+            <RtcSurfaceView
+              canvas={{ uid: remoteUid }}
+              // connection={{ channelId: channelName }} // ✅ add this
+              style={styles.videoView}
+            />
+          </React.Fragment>
+          {/* ) : (
                 <View style={styles.coverLoading}>
                   <View style={styles.loadCover}>
                     <ActivityIndicator size={32} color="#fff" />
@@ -199,11 +204,10 @@ const ListedLives = ({
                 </View>
               )}
             </>
-          )}
+          )} */}
         </View>
       </Pressable>
 
-      
       <View
         style={[
           {
@@ -211,7 +215,10 @@ const ListedLives = ({
             flex: 1,
             width: '100%',
             // height: '100%',
-            height: keyboardHeight > 0 ? Dimensions.get('window').height - keyboardHeight : Dimensions.get('window').height - 161 - keyboardHeight,
+            height:
+              keyboardHeight > 0
+                ? Dimensions.get('window').height - keyboardHeight
+                : Dimensions.get('window').height - 161 - keyboardHeight,
             paddingBottom: 26,
             // height: 170,
             flexDirection: 'column',
@@ -282,14 +289,13 @@ const ListedLives = ({
               showBottomStm={true}
               room={item._id}
               messages={messages}
-              username={item.username}
+              username={item?.owner?.username}
               setMessages={setMessages}
               scrollToBottom={scrollToBottom}
               leave={leave}
-              _id={item._id}
-              isPrivateLive={false}
-              isToComment={isToComment}
-              setIsToComment={setIsToComment}
+              _id={item?.owner?._id}
+              isPrivateLive={true}
+              random={random}
             />
           </Suspense>
           {/* )} */}
@@ -299,7 +305,7 @@ const ListedLives = ({
   );
 };
 
-export default ListedLives;
+export default JoinPrivateLive;
 
 export const styles = StyleSheet.create({
   absolute: {

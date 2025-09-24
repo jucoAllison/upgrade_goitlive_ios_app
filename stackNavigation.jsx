@@ -35,6 +35,7 @@ import DeleteAccount from './src/screens/deleteAccount/deleteAccount';
 import EventFeatures from './src/screens/features/eventFeatures';
 import EventBlockedAccount from './src/screens/blockedAccount/eventBlockedAccount';
 import EventPrivacy from './src/screens/privacy/eventPrivacy';
+import EventJoinPrivate from './src/screens/joinPrivateLive/eventJoinPrivateLive'
 
 import { createStackNavigator } from '@react-navigation/stack';
 import { MainContext } from './App';
@@ -374,6 +375,14 @@ const StackNavigation = () => {
           title: 'Blocked',
         })}
         component={EventBlockedAccount}
+      />
+      <Stack.Screen
+        name="JoinPrivate"
+        options={({ route, navigation }) => ({
+          headerShown: false,
+          title: '',
+        })}
+        component={EventJoinPrivate}
       />
     </Stack.Navigator>
   );

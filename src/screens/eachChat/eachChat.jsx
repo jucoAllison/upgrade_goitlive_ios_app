@@ -396,7 +396,7 @@ const EachChat = ({
         <View
           style={{
             ...styles.positionAbsoluteView,
-            height: Dimensions.get('window').height - 161 - keyboardHeight,
+            height: Dimensions.get('window').height - 141 - keyboardHeight,
           }}
         >
           {!chatMessage && <Fallback />}

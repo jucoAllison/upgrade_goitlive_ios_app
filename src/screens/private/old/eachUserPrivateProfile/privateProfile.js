@@ -36,22 +36,30 @@ import Button from '../../../../components/button';
 const BottomBtns = lazy(() => import('./bottomBtns'));
 const TopDetailsHere = lazy(() => import('./topDetailsHere'));
 const AllUsersMap = lazy(() => import('./allUsers'));
-const PrivateProfile = ({ setSwipeEnabled }) => {
+const PrivateProfile = ({
+  setSwipeEnabled,
+  openMenu,
+  showMsg,
+  setShowMsg,
+  errMsg,
+  setErrMsg,
+  channelName,
+  setChannelName,
+}) => {
   const CTX = useContext(MainContext);
   const [shouldRefresh, setShouldRefresh] = useState({ math: 'null' });
   const [refreshing, setRefreshing] = useState(false);
   const agoraEngine = useAgoraEngine();
   const [joinLoading, setJoinLoading] = useState(false);
   const [remoteUid, setRemoteUid] = useState(0); // Uid of the remote user
-  const [showMsg, setShowMsg] = useState(false);
-  const [errMsg, setErrMsg] = useState('');
+  // const [showMsg, setShowMsg] = useState(false);
+  // const [errMsg, setErrMsg] = useState('');
   const [leaving, setLeaving] = useState(false);
   const [appId, setAppId] = useState(CTX.systemConfig?.A_appId);
-  const [channelName, setChannelName] = useState(null);
   const [token, setToken] = useState(null);
   const [uid, setUid] = useState(null);
   const [timer, setTimer] = useState(5);
-  const [allUsers, setAllUsers] = useState([]);  
+  const [allUsers, setAllUsers] = useState([]);
   const [isModal, setIsModal] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -244,9 +252,10 @@ const PrivateProfile = ({ setSwipeEnabled }) => {
         return;
       }
       setLeaving(false);
+      setIsModal(false);
       setSwipeEnabled(true);
 
-       await CTX.socketObj?.emit('oya-everybody-leave', {
+      await CTX.socketObj?.emit('oya-everybody-leave', {
         room: channelName,
         user: CTX.userObj._id,
       });
@@ -288,13 +297,7 @@ const PrivateProfile = ({ setSwipeEnabled }) => {
         <ErrMessage msg={errMsg} closeErr={() => setShowMsg(false)} />
       )}
 
-
-
-
-
-
-
-       <Modal
+      <Modal
         animationType="slide"
         transparent={true}
         visible={isModal}
@@ -372,15 +375,6 @@ const PrivateProfile = ({ setSwipeEnabled }) => {
         </Pressable>
       </Modal>
 
-
-
-
-
-
-
-
-
-
       {token ? (
         <View
           style={{
@@ -405,7 +399,8 @@ const PrivateProfile = ({ setSwipeEnabled }) => {
               {/* {isJoined && ( */}
               <TopDetailsHere
                 // leaveChannel={leaveChannel}
-            leaveChannel={() => setIsModal(true)}
+                leaveChannel={() => setIsModal(true)}
+                openMenu={openMenu}
                 messages={messages}
                 isJoined={token}
                 timer={timer}

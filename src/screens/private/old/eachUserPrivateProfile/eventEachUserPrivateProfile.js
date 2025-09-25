@@ -151,7 +151,7 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
 
   const mappActive = data?.active?.map((v, i) => {
     return (
-      <View style={styles.coverNot}>
+      <View style={styles.coverNot} key={i}>
         <TouchableOpacity
           activeOpacity={0.8}
           style={{
@@ -162,8 +162,8 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
         >
           <Image
             source={{
-              uri: v?.photo
-                ? v?.photo
+              uri: v?.uid?.photo
+                ? v?.uid?.photo
                 : 'https://ik.imagekit.io/7p9j0gn28d3j/avatar_6Eg2VLCXp.png?updatedAt=1699355756358',
             }}
             style={styles.eachImg}
@@ -177,9 +177,9 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
                 color: '#0e0e0e',
               }}
             >
-              {v?.full_name}
+              {v?.uid?.full_name}
             </Text>
-            {v?.verify && (
+            {v?.uid?.verify && (
               <MaterialIcons
                 style={{ marginLeft: 5 }}
                 name="verified"
@@ -198,17 +198,28 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
                 fontFamily: 'Gilroy-Regular',
               }}
             >
-              @{v?.username}
+              @{v?.uid?.username}
             </Text>
           </View>
         </View>
+
+        <Text
+          style={{
+            ...styles.username,
+            color: '#0e0e0e',
+            fontFamily: 'Gilroy-Bold',
+            marginLeft: 'auto',
+          }}
+        >
+          {v?.random.toString().slice(-4)}
+        </Text>
       </View>
     );
   });
 
   const mappAll = data?.subscribers?.map((v, i) => {
     return (
-      <View style={styles.coverNot}>
+      <View style={styles.coverNot} key={i}>
         <TouchableOpacity
           activeOpacity={0.8}
           style={{
@@ -219,8 +230,8 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
         >
           <Image
             source={{
-              uri: v?.photo
-                ? v?.photo
+              uri: v?.uid?.photo
+                ? v?.uid?.photo
                 : 'https://ik.imagekit.io/7p9j0gn28d3j/avatar_6Eg2VLCXp.png?updatedAt=1699355756358',
             }}
             style={styles.eachImg}
@@ -231,12 +242,12 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
             <Text
               style={{
                 ...styles.username,
-                color:  '#0e0e0e',
+                color: '#0e0e0e',
               }}
             >
-              {v?.full_name}
+              {v?.uid?.full_name}
             </Text>
-            {v?.verify && (
+            {v?.uid?.verify && (
               <MaterialIcons
                 style={{ marginLeft: 5 }}
                 name="verified"
@@ -250,15 +261,26 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
               style={{
                 ...styles.username,
                 fontSize: 12,
-                color:  '#0e0e0e',
+                color: '#0e0e0e',
                 // color: '#cbd0d5',
                 fontFamily: 'Gilroy-Regular',
               }}
             >
-              @{v?.username}
+              @{v?.uid?.username}
             </Text>
           </View>
         </View>
+
+        <Text
+          style={{
+            ...styles.username,
+            color: '#0e0e0e',
+            fontFamily: 'Gilroy-Bold',
+            marginLeft: 'auto',
+          }}
+        >
+          {v?.random.toString().slice(-4)}
+        </Text>
       </View>
     );
   });
@@ -336,8 +358,7 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
                       </View>
                       <View
                         style={{
-                          flexDirection: 'row',
-                          gap: 10,
+                          gap: 1,
                           // paddingTop: 10,
                           paddingRight: 20,
                           paddingBottom: 20,
@@ -499,8 +520,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     position: 'relative',
     alignItems: 'center',
-    width: '80%',
-    // marginTop: 20,
+    width: '100%',
+    marginTop: 0,
   },
   activityCover: {
     width: '100%',

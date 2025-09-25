@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import { MainContext } from '../../../../../App';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { TruncateText } from '../../../../helper/truncateText';
@@ -23,6 +23,8 @@ const MappedLivers = ({ shouldRefresh, token }) => {
   const [showMsg, setShowMsg] = useState(false);
   const [errMsg, setErrMsg] = useState('');
   const navigation = useNavigation();
+    const isFocused = useIsFocused();
+  
   const CTX = useContext(MainContext);
 
   const getDetailsHere = async () => {
@@ -58,7 +60,7 @@ const MappedLivers = ({ shouldRefresh, token }) => {
 
   useEffect(() => {
     getDetailsHere();
-  }, [shouldRefresh, token]);
+  }, [shouldRefresh, token, isFocused]);
 
   return (
     <View>

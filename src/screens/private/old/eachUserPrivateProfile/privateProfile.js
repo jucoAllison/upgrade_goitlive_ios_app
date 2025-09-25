@@ -60,7 +60,9 @@ const PrivateProfile = ({
   const [uid, setUid] = useState(null);
   const [timer, setTimer] = useState(5);
   const [allUsers, setAllUsers] = useState([]);
-  const [isModal, setIsModal] = useState(false);
+  const [isModal, setIsModal] = useState(null);
+  const [myUid, setMyUid] = useState(null);
+  const [toBlock, setToBlock] = useState(null)
   const [messages, setMessages] = useState([
     {
       _id: Math.random(),
@@ -120,6 +122,39 @@ const PrivateProfile = ({
     return () => clearInterval(interval); // Cleanup on component unmount or when isJoined becomes false
   }, [token, timer]);
 
+  const getDetails = async () => {
+    try {
+      const joining = await fetch(
+        `${CTX.systemConfig?.p}get/account/join/private/call/${channelName}/${myUid}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `bearer ${CTX.sessionToken}`,
+          },
+        },
+      );
+      const joinJson = await joining.json();
+      if (joinJson?.e) {
+        // setLoading(false);
+        setErrMsg(joinJson?.m);
+        setJoiningErr(joinJson?.m);
+        console.log('joinJson?.m =>>>> ', joinJson?.m);
+        setShowMsg(true);
+        return;
+      }
+    } catch (error) {
+      console.log('error from getDetails from private =>>> ', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!myUid) return;
+    if (!channelName) return;
+
+    getDetails();
+  }, [myUid, channelName]);
+
   const join = async () => {
     if (token) {
       return;
@@ -132,8 +167,9 @@ const PrivateProfile = ({
 
     agoraEngine.enableVideo();
     agoraEngine.registerEventHandler({
-      onJoinChannelSuccess: () => {
+      onJoinChannelSuccess: async (_connection, uid) => {
         // showMessage('Successfully joined the channel ' + channelName);
+        setMyUid(_connection?.localUid);
 
         if (channelName) {
           setErrMsg('Successfully joined the channel ');
@@ -246,13 +282,13 @@ const PrivateProfile = ({
       );
       const parsedJson = await fetching.json();
 
-      if (parsedJson?.error) {
-        setErrMsg(parsedJson?.error);
+      if (parsedJson?.error || parsedJson?.e) {
+        setErrMsg(parsedJson?.error || parsedJson?.m);
         setShowMsg(true);
         return;
       }
       setLeaving(false);
-      setIsModal(false);
+      setIsModal(null);
       setSwipeEnabled(true);
 
       await CTX.socketObj?.emit('oya-everybody-leave', {
@@ -291,6 +327,46 @@ const PrivateProfile = ({
     setRefreshing(false);
   };
 
+  
+const blockUser = async () => {
+    setLeaving(true);
+  try {
+     const fetching = await fetch(
+        `${CTX.systemConfig?.p}get/account/block/private/call/user/${channelName}/${toBlock}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `bearer ${CTX.sessionToken}`,
+          },
+        },
+      );
+      const parsedJson = await fetching.json();
+
+      if (parsedJson?.error || parsedJson?.e) {
+        setErrMsg(parsedJson?.error || parsedJson?.m);
+        setShowMsg(true);
+        return;
+      }
+
+       await CTX.socketObj?.emit('block-user-stream', {
+        room: channelName,
+        remoteID: toBlock,
+      });
+
+
+      setLeaving(false);
+      setIsModal(null);
+
+
+  } catch (error) {
+          setLeaving(false);
+      setErrMsg('Network request failed');
+      setShowMsg(true);
+      console.log("error from blockUserHandler =>> ", error);
+  }
+}
+
   return (
     <>
       {showMsg && (
@@ -300,8 +376,8 @@ const PrivateProfile = ({
       <Modal
         animationType="slide"
         transparent={true}
-        visible={isModal}
-        onRequestClose={() => setIsModal(!isModal)}
+        visible={isModal?.length > 1}
+        onRequestClose={() => setIsModal(null)}
       >
         <Pressable style={styles.centeredView}>
           <View style={{ ...styles.modalView }}>
@@ -320,23 +396,25 @@ const PrivateProfile = ({
                   style={{ marginBottom: 12 }}
                   color="#e20154"
                 />
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => setIsModal(false)}
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    width: 34,
-                    height: 34,
-                  }}
-                >
-                  <AntDesign
-                    name="close"
-                    size={20}
-                    style={{ marginLeft: 'auto' }}
-                    color="#555"
-                  />
-                </TouchableOpacity>
+                {!leaving && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setIsModal(null)}
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      width: 34,
+                      height: 34,
+                    }}
+                  >
+                    <AntDesign
+                      name="close"
+                      size={20}
+                      style={{ marginLeft: 'auto' }}
+                      color="#555"
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
 
               <Text
@@ -348,7 +426,7 @@ const PrivateProfile = ({
                   marginBottom: 10,
                 }}
               >
-                End live
+                {isModal == 'close' ? 'End live' : 'Block user'}
               </Text>
 
               <Text
@@ -359,13 +437,20 @@ const PrivateProfile = ({
                   textAlign: 'center',
                 }}
               >
-                You want to close live streaming. When you end a stream, it
-                won't be saved
+                {isModal == 'close'
+                  ? "You want to close live streaming. When you end a stream, it won't be saved"
+                  : `You are about to block ${toBlock?.toString().slice(-4)}. Blocked user can't join this stream again`}
               </Text>
 
               <Button
                 loading={leaving}
-                onPress={leave}
+                onPress={() => {
+                  if (isModal == 'close') {
+                    leave();
+                  } else {
+                    blockUser();
+                  }
+                }}
                 label={'Continue'}
                 style={{ width: '100%', marginTop: 30, height: 50 }}
               />
@@ -399,7 +484,7 @@ const PrivateProfile = ({
               {/* {isJoined && ( */}
               <TopDetailsHere
                 // leaveChannel={leaveChannel}
-                leaveChannel={() => setIsModal(true)}
+                leaveChannel={() => setIsModal('close')}
                 openMenu={openMenu}
                 messages={messages}
                 isJoined={token}
@@ -407,7 +492,15 @@ const PrivateProfile = ({
               />
               {/* )} */}
 
-              {allUsers?.length > 0 && <AllUsersMap allUsers={allUsers} />}
+              {allUsers?.length > 0 && (
+                <AllUsersMap
+                  allUsers={allUsers}
+                  blockUser={item => {
+                    setIsModal('block');
+                    setToBlock(item);
+                  }}
+                />
+              )}
             </Suspense>
           </View>
 

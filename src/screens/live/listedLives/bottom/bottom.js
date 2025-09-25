@@ -33,10 +33,12 @@ const Bottom = ({
   setMessages,
   scrollToBottom,
   isPrivateLive,
-  username,
+  // username,
   _id,
+  isToComment,
+  setIsToComment,
 }) => {
-  const [isToComment, setIsToComment] = useState(false)
+  // const [] = useState(false)
   const [seconds, setSeconds] = useState(0);
   const prevSecondsRef = useRef();
   const [errMsg, setErrMsg] = useState('');

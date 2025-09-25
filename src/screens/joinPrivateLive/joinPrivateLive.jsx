@@ -24,6 +24,7 @@ import { RtcSurfaceView } from 'react-native-agora';
 import LinearGradient from 'react-native-linear-gradient';
 
 import ImgAbc from '../../assets/ic_launcher.png';
+import { useNavigation } from '@react-navigation/native';
 const Bottom = React.lazy(() => import('./bottom/bottom'));
 const JoinedLiveHeader = React.lazy(() => import('./joinedLiveHeader'));
 const JoinPrivateLive = ({
@@ -34,6 +35,7 @@ const JoinPrivateLive = ({
   leave,
   channelName,
 }) => {
+  const navigation = useNavigation();
   const CTX = useContext(MainContext);
   const [showBottomStm, setShowBottomStm] = useState(false);
   const scrollViewRef = useRef();
@@ -120,10 +122,15 @@ const JoinPrivateLive = ({
     reSetHere(copiedMessages);
   };
 
+  const goBackHandler = () => {
+    navigation.goBack();
+    leave();
+  };
+
   useEffect(() => {
     if (CTX.socketObj) {
       CTX.socketObj.on('send-private-room-message', newMessageFromUser);
-      CTX.socketObj.on('every-body-leave', leave);
+      CTX.socketObj.on('every-body-leave', goBackHandler);
     }
 
     return () => {
@@ -349,6 +356,7 @@ export const styles = StyleSheet.create({
   },
   videoView: { width: '100%', height: '100%' },
   fullCam: {
+    backgroundColor: "#000",
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
   },

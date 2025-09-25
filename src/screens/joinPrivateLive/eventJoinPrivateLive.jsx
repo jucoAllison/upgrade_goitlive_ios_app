@@ -47,14 +47,44 @@ const EventJoinPrivateLive = () => {
   const [errMsg, setErrMsg] = useState('');
   const agoraEngine = useAgoraEngine();
   const [joiningErr, setJoiningErr] = useState('');
-  const random = Math.random().toString(20).split(".")[1].split("").slice(0,4).join("")
+  const [random, setRandom] = useState(0);
+  const [joinJson, setJoinJson] = useState(null);
 
   const initagora = () => {
     if (!agoraEngine) return;
 
     agoraEngine.enableVideo();
     agoraEngine.registerEventHandler({
-      onJoinChannelSuccess: () => {
+      onJoinChannelSuccess: async (_connection, uid) => {
+        // console.log("uid DATA HERE!!", uid)
+        console.log('_connection DATA HERE!!', _connection?.localUid);
+        setRandom(_connection?.localUid);
+
+        const joining = await fetch(
+          `${CTX.systemConfig?.p}get/account/join/private/call/${channelName}/${_connection?.localUid}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `bearer ${CTX.sessionToken}`,
+            },
+          },
+        );
+        const joinJson = await joining.json();
+        if (joinJson?.e) {
+          agoraEngine?.leaveChannel();
+          setLoading(false);
+          setErrMsg(joinJson?.m);
+          setJoiningErr(joinJson?.m);
+          console.log('joinJson?.m =>>>> ', joinJson?.m);
+          setShowMsg(true);
+          return;
+        }
+
+        // console.log("uid DATA HERE!!", uid)
+        setRemoteUid(_connection?.localUid);
+        setJoinJson(joinJson?.data);
+
         // showMessage('Successfully joined the channel ' + channelName);
 
         if (channelName) {
@@ -65,16 +95,49 @@ const EventJoinPrivateLive = () => {
         // setIsJoined(true);
       },
       onUserJoined: (_connection, Uid) => {
+        // console.log('Channel:', _connection);
+        // console.log('My UID:', _connection);
+
         // showMessage('Remote user joined with uid ' + Uid);
-        setRemoteUid(Uid);
         setErrMsg('A user joined ');
         setShowMsg(true);
       },
       onUserOffline: (_connection, Uid) => {
         // showMessage('Remote user left the channel. uid: ' + Uid);
+
+        if (joinJson?.subscribers?.filter(v => v?.random == Uid)[0]?.isHost) {
+          leave();
+          navigation.goBack();
+        }
+
         setErrMsg('A user left the channel ');
         setShowMsg(true);
         setRemoteUid(0);
+      },
+
+      // ✅ Add error handling
+      onError: (err, msg) => {
+        console.log('Agora error:', err, msg);
+        if (err === 109 || err === 110) {
+          // 109: invalid token, 110: token expired
+          setShowErrorModal(true);
+
+          setErrMsg('This stream has expired or token is invalid.');
+          setShowMsg(true);
+          agoraEngine.leaveChannel();
+        }
+      },
+
+      // ✅ Add connection state change handling
+      onConnectionStateChanged: (state, reason) => {
+        // console.log('Connection state:', state, 'Reason:', reason);
+        if (reason === 8) {
+          // ConnectionChangedInvalidToken
+          setShowErrorModal(true);
+          setErrMsg('Token expired, stream is over.');
+          setShowMsg(true);
+          agoraEngine.leaveChannel();
+        }
       },
     });
 
@@ -106,30 +169,11 @@ const EventJoinPrivateLive = () => {
       //   `${CTX.systemConfig?.p}get/account/join/private/call/${channelName}`,
       // );
 
-      const joining = await fetch(
-        `${CTX.systemConfig?.p}get/account/join/private/call/${channelName}/${random}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `bearer ${CTX.sessionToken}`,
-          },
-        },
-      );
-      const joinJson = await joining.json();
-      if (joinJson?.e) {
-        setLoading(false);
-        setErrMsg(joinJson?.m);
-        setJoiningErr(joinJson?.m);
-        console.log('joinJson?.m =>>>> ', joinJson?.m);
-        setShowMsg(true);
-        return;
-      }
-
       agoraEngine?.setChannelProfile(
         ChannelProfileType.ChannelProfileLiveBroadcasting,
       );
       agoraEngine?.startPreview();
+
       agoraEngine?.joinChannel(token, channelName, uid, {
         clientRoleType: ClientRoleType.ClientRoleBroadcaster,
       });
@@ -187,7 +231,6 @@ const EventJoinPrivateLive = () => {
 
   const leave = async () => {
     try {
-
       if (!channelName) return;
 
       const leaving = await fetch(
@@ -248,33 +291,33 @@ const EventJoinPrivateLive = () => {
   }, [token, channelName]);
 
   // if after 17 seconds, there is nothing, return back to go live
-  useEffect(() => {
-    if (elapsedTime === 17) {
-      setShowErrorModal(true);
-    }
-  }, [elapsedTime]);
+  // useEffect(() => {
+  //   if (elapsedTime === 17) {
+  //     setShowErrorModal(true);
+  //   }
+  // }, [elapsedTime]);
 
-  useEffect(() => {
-    let timer;
+  // useEffect(() => {
+  //   let timer;
 
-    if (isFocused) {
-      // Start the timer when the video is not visible
-      if (remoteUid === 0 || joiningErr.length < 1) {
-        timer = setInterval(() => {
-          // Update elapsed time every second
-          setElapsedTime(prevElapsedTime => prevElapsedTime + 1);
-        }, 1000);
-      } else {
-        console.log('clearInterval => ');
-        // Reset the timer when the video goes out of view
-        clearInterval(timer);
-      }
-    }
+  //   if (isFocused) {
+  //     // Start the timer when the video is not visible
+  //     if (remoteUid === 0 || joiningErr.length < 1) {
+  //       timer = setInterval(() => {
+  //         // Update elapsed time every second
+  //         setElapsedTime(prevElapsedTime => prevElapsedTime + 1);
+  //       }, 1000);
+  //     } else {
+  //       console.log('clearInterval => ');
+  //       // Reset the timer when the video goes out of view
+  //       clearInterval(timer);
+  //     }
+  //   }
 
-    return () => {
-      clearInterval(timer); // Clean up the timer on unmount
-    };
-  }, [isFocused, route?.params, isSetting, remoteUid, joiningErr]);
+  //   return () => {
+  //     clearInterval(timer); // Clean up the timer on unmount
+  //   };
+  // }, [isFocused, route?.params, isSetting, remoteUid]);
 
   return (
     <>
@@ -312,28 +355,30 @@ const EventJoinPrivateLive = () => {
                   style={{ marginBottom: 12 }}
                   color="#e20154"
                 />
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setElapsedTime(0);
-                    setShowErrorModal(false);
-                    // console.log("route?.params?._id =>> ", route?.params?._id);
-                    setJoiningErr('');
-                  }}
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    width: 34,
-                    height: 34,
-                  }}
-                >
-                  <AntDesign
-                    name="close"
-                    size={20}
-                    style={{ marginLeft: 'auto' }}
-                    color="#555"
-                  />
-                </TouchableOpacity>
+                {joiningErr.length < 1 && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setElapsedTime(0);
+                      setShowErrorModal(false);
+                      // console.log("route?.params?._id =>> ", route?.params?._id);
+                      setJoiningErr('');
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      width: 34,
+                      height: 34,
+                    }}
+                  >
+                    <AntDesign
+                      name="close"
+                      size={20}
+                      style={{ marginLeft: 'auto' }}
+                      color="#555"
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
 
               <Text
@@ -363,8 +408,8 @@ const EventJoinPrivateLive = () => {
               <Button
                 // loading={leaving}
                 onPress={() => {
-                  navigation.goBack();
                   leave();
+                  navigation.goBack();
                 }}
                 label={'Go back'}
                 style={{ width: '100%', marginTop: 30, height: 50 }}

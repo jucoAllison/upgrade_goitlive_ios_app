@@ -35,7 +35,7 @@ const CommentInput = ({
       const random = Math.random();
       CTX.socketObj?.emit('private-room-message', {
         room,
-        user: {_id: random, username: `Anonymous ${dis_name}`, verify: CTX?.userObj?.verify},
+        user: {_id: random, username: `Anonymous ${dis_name?.toString().slice(-4)}`, verify: CTX?.userObj?.verify},
         _id: Math.random(),
         msg: content.trim(),
       });
@@ -43,7 +43,7 @@ const CommentInput = ({
       const spread = [...messages];
       spread.push({
         _id: Math.random(),
-        user: {_id: random, username: `Anonymous ${dis_name}`},
+        user: {_id: random, username: `Anonymous ${dis_name?.toString().slice(-4)}`},
         msg: content.trim(),
       });
       setMessages(spread);

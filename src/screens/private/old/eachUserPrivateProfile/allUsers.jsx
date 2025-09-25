@@ -9,7 +9,7 @@ import React from 'react';
 import { RtcSurfaceView } from 'react-native-agora';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-const AllUsersMap = ({ allUsers }) => {
+const AllUsersMap = ({ allUsers, blockUser }) => {
   return (
     <View>
       <FlatList
@@ -45,7 +45,7 @@ const AllUsersMap = ({ allUsers }) => {
                   paddingRight: 20,
                 }}
               >
-                {item}
+                {item?.toString().slice(-4)}
               </Text>
             </View>
 
@@ -62,6 +62,7 @@ const AllUsersMap = ({ allUsers }) => {
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
+              onPress={() => blockUser(item)}
             >
               <FontAwesome name="close" color="#fff" size={17} />
             </TouchableOpacity>

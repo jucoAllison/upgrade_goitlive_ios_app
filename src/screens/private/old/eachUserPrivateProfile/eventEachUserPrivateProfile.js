@@ -29,7 +29,7 @@ import BottomSheet, {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import GiftAnimation from '../../../../components/gift_animation';
 const PrivateProfile = React.lazy(() => import('./privateProfile'));
 const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
   const CTX = useContext(MainContext);
@@ -211,7 +211,9 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
             marginLeft: 'auto',
           }}
         >
-          {v?.random.toString().slice(-4)}
+          {v?.uid?._id == CTX.userObj?._id
+            ? 'You'
+            : v?.random.toString().slice(-4)}
         </Text>
       </View>
     );
@@ -279,8 +281,97 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
             marginLeft: 'auto',
           }}
         >
-          {v?.random.toString().slice(-4)}
+          {v?.uid?._id == CTX.userObj?._id
+            ? 'You'
+            : v?.random.toString().slice(-4)}
         </Text>
+      </View>
+    );
+  });
+
+  const mappGifts = data?.gifts?.map((v, i) => {
+    return (
+      <View style={styles.coverNot} key={i}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={{
+            ...styles.coverStatusRound,
+            // borderWidth: status?.length > 0 ? 1 : 0,
+            borderWidth: 1,
+          }}
+        >
+          <Image
+            source={{
+              uri: v?.from?.photo
+                ? v?.from?.photo
+                : 'https://ik.imagekit.io/7p9j0gn28d3j/avatar_6Eg2VLCXp.png?updatedAt=1699355756358',
+            }}
+            style={styles.eachImg}
+          />
+        </TouchableOpacity>
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text
+              style={{
+                ...styles.username,
+                color: '#0e0e0e',
+              }}
+            >
+              {v?.from?.full_name}
+            </Text>
+            {v?.from?.verify && (
+              <MaterialIcons
+                style={{ marginLeft: 5 }}
+                name="verified"
+                color="#91ff91"
+                size={16}
+              />
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', marginTop: 3 }}>
+            <Text
+              style={{
+                ...styles.username,
+                fontSize: 12,
+                color: '#0e0e0e',
+                // color: '#cbd0d5',
+                fontFamily: 'Gilroy-Regular',
+              }}
+            >
+              @{v?.display_name}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={{
+            marginLeft: 'auto',
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ fontSize: 40 }}>{v?.json}</Text>
+
+          <Text
+            style={{
+              fontFamily: 'Gilroy-Bold',
+              color: '#262626',
+              fontSize: 11,
+              textTransform: 'capitalize',
+            }}
+          >
+            {v?.name}
+          </Text>
+
+          {/* <Text
+            style={{
+              ...styles.username,
+              color: '#0e0e0e',
+              fontFamily: 'Gilroy-Bold',
+            }}
+          >
+          </Text> */}
+        </View>
       </View>
     );
   });
@@ -448,14 +539,39 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
                           </>
                         ) : (
                           <>
-                            <Text
-                              style={{
-                                ...styles.pleaseRetry,
-                                color: '#000',
-                              }}
-                            >
-                              MApped Gifts HERE!!
-                            </Text>
+                            {mappGifts?.length > 0 ? (
+                              mappGifts
+                            ) : (
+                              <View
+                                style={{
+                                  ...styles.activiityCover,
+                                  marginTop: 80,
+                                }}
+                              >
+                                <MaterialCommunityIcons
+                                  name="terraform"
+                                  color={'#000'}
+                                  size={40}
+                                />
+                                <View
+                                  style={{
+                                    marginTop: 20,
+                                    flexDirection: 'row',
+                                    flexWrap: 'wrap',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      ...styles.pleaseRetry,
+                                      color: '#000',
+                                    }}
+                                  >
+                                    No user has gifted you yet!
+                                  </Text>
+                                </View>
+                              </View>
+                            )}
                           </>
                         )}
                       </View>
@@ -466,6 +582,8 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
             </BottomSheet>
           </Pressable>
         )}
+
+        <GiftAnimation />
 
         <Suspense fallback={<Fallback />}>
           <PrivateProfile
@@ -487,6 +605,18 @@ const EventEachUserPrivateProfile = ({ setSwipeEnabled }) => {
 export default EventEachUserPrivateProfile;
 
 const styles = StyleSheet.create({
+  banner: {
+    position: 'absolute',
+    top: 50,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 12,
+  },
+  text: {
+    fontSize: 20,
+    color: '#fff',
+  },
   eachImg: {
     width: 42,
     height: 42,

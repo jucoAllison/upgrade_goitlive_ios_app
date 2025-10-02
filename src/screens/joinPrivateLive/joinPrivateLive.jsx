@@ -23,7 +23,6 @@ import Fallback from '../../components/fallback/fallback';
 import { RtcSurfaceView } from 'react-native-agora';
 import LinearGradient from 'react-native-linear-gradient';
 
-import ImgAbc from '../../assets/ic_launcher.png';
 import { useNavigation } from '@react-navigation/native';
 const Bottom = React.lazy(() => import('./bottom/bottom'));
 const JoinedLiveHeader = React.lazy(() => import('./joinedLiveHeader'));
@@ -34,23 +33,15 @@ const JoinPrivateLive = ({
   item,
   leave,
   channelName,
+  openMenu,
+  messages,
+  setMessages,
 }) => {
   const navigation = useNavigation();
   const CTX = useContext(MainContext);
   const [showBottomStm, setShowBottomStm] = useState(false);
   const scrollViewRef = useRef();
   const [isAtBottom, setIsAtBottom] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      _id: Math.random(),
-      user: {
-        username: `Notice`,
-        img: ImgAbc,
-        verify: true,
-      },
-      msg: 'Welcome to GoItLive!! Enjoy engaging with people in real time; you must be at least eighteen years old.',
-    },
-  ]);
 
   const handleScroll = event => {
     const scrollY = event.nativeEvent.contentOffset.y;
@@ -117,14 +108,15 @@ const JoinPrivateLive = ({
       totalUsers,
     };
 
+    // console.log("totalUsers =>>> ", totalUsers);
+
     copiedMessages.push(newMessage);
     setMessages(copiedMessages);
     reSetHere(copiedMessages);
   };
 
-  const goBackHandler = () => {
-    navigation.goBack();
-    leave();
+  const goBackHandler = async () => {
+    leave({ forReal: true });
   };
 
   useEffect(() => {
@@ -178,6 +170,9 @@ const JoinPrivateLive = ({
           <JoinedLiveHeader
             showBottomStm={false}
             item={{ ...item?.owner, is_user_caring: true }}
+            openMenu={openMenu}
+            messages={messages}
+            leaveAndGoback={goBackHandler}
           />
         </Suspense>
         <View style={styles.fullCam}>
@@ -196,7 +191,7 @@ const JoinPrivateLive = ({
           <React.Fragment key={remoteUid}>
             <RtcSurfaceView
               canvas={{ uid: remoteUid }}
-              // connection={{ channelId: channelName }} // ✅ add this
+              connection={{ channelId: channelName }} // ✅ add this
               style={styles.videoView}
             />
           </React.Fragment>
@@ -356,7 +351,7 @@ export const styles = StyleSheet.create({
   },
   videoView: { width: '100%', height: '100%' },
   fullCam: {
-    backgroundColor: "#000",
+    backgroundColor: '#000',
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
   },

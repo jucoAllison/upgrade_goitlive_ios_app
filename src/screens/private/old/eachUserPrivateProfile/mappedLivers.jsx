@@ -186,7 +186,7 @@ const MappedLivers = ({ shouldRefresh, token }) => {
 
                 <Pressable
                   onPress={() =>
-                    navigation.navigate('JoinPrivate', {
+                    navigation.replace('JoinPrivate', {
                       ...item,
                     })
                   }

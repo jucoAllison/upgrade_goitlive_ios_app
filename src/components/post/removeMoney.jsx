@@ -174,7 +174,7 @@ const RemoveMoneyCom = ({
                   onPress={() => {
                     // setModalVisible(true);
                     // navigation.pop();
-                    leave();
+                    // leave();
                     navigation.navigate('DepositScreen');
                   }}
                   label={'Fund account'}
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     fontSize: 14,
     textAlign: 'center',
-    fontFamily: 'Overpass-Regular',
+    fontFamily: 'Gilroy-Medium',
   },
 });
 

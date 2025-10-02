@@ -46,9 +46,9 @@ const CommentInput = ({
         user: {_id: random, username: `Anonymous ${dis_name?.toString().slice(-4)}`},
         msg: content.trim(),
       });
+      setContent('');
       setMessages(spread);
       scrollToBottom();
-      setContent('');
       return;
     }
 
@@ -72,9 +72,9 @@ const CommentInput = ({
       user: userObj,
       msg: content.trim(),
     });
+    setContent('');
     setMessages(spread);
     scrollToBottom();
-    setContent('');
   };
 
   return (

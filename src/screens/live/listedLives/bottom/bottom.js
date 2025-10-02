@@ -5,6 +5,9 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  Modal,
+  ImageBackground,
+  Pressable,
 } from 'react-native';
 import React, {
   Suspense,
@@ -21,10 +24,16 @@ import Animated, {
   withSequence,
   withDelay,
 } from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import Lottie from 'lottie-react-native';
+import imgData from '../../../../assets/iosBackground.jpeg';
+import animationData from '../../../../assets/json/cryingHeart.json';
+import CommentInput from './commentInput';
+import Button from '../../../../components/button';
 import { MainContext } from '../../../../../App';
 
 const CountdownTimer = React.lazy(() => import('./countdownTimer'));
-import CommentInput from './commentInput';
 const Bottom = ({
   leave,
   showBottomStm,
@@ -45,6 +54,7 @@ const Bottom = ({
   const [showMsg, setShowMsg] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const CTX = useContext(MainContext);
+  const navigation = useNavigation();
 
   const animatedStyles = useAnimatedStyle(() => ({
     transform: [
@@ -93,10 +103,11 @@ const Bottom = ({
         return;
       }
 
-      console.log('response?.data?.shouldBlock ==>>>  ', response?.data);
-      if (response?.data?.shouldBlock) {
-        setModalVisible(response?.data?.shouldBlock);
-        // setPauseOverRide();
+      // console.log('response?.data?.shouldBlock ==>>>  ', response?.data);
+      if (response?.shouldBlock) {
+        if (!modalVisible) {
+          setModalVisible(response?.shouldBlock);
+        }
       }
     } catch (error) {
       console.log('error from getMoneyFromUser => ', error);
@@ -122,6 +133,73 @@ const Bottom = ({
 
   return (
     <>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(true)}
+      >
+        <ImageBackground
+          source={imgData}
+          style={{
+            width: Dimensions.get('window').width,
+            height: Dimensions.get('window').height,
+            overflow: 'hidden',
+          }}
+          blurRadius={30}
+        >
+          <Pressable style={styles.anocenteredView}>
+            <View style={{ ...styles.anomodalView }}>
+              <>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setModalVisible(false);
+                    leave();
+                    navigation.navigate('Navigation', {
+                      screen: 'Chats',
+                    });
+                  }}
+                  style={styles.closeHere}
+                >
+                  <AntDesign name="close" size={20} color="#555" />
+                </TouchableOpacity>
+
+                <Lottie
+                  style={styles.Lottie}
+                  source={animationData}
+                  autoPlay
+                  loop
+                />
+
+                <Text style={styles.mainTextHere}>
+                  You no longer have enough funds in your account to continue
+                  streaming!
+                </Text>
+
+                <Button
+                  // loading={leaving}
+                  onPress={() => {
+                    setModalVisible(false);
+                    // navigation.pop();
+                    leave();
+                    navigation.navigate('DepositScreen');
+                  }}
+                  label={'Fund account'}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ee6666',
+                    marginTop: 30,
+                    height: 50,
+                  }}
+                />
+              </>
+              {/* )} */}
+            </View>
+          </Pressable>
+        </ImageBackground>
+      </Modal>
+
       {/* <Animated.View style={[styles.bottomSmth, animatedStyles]}> */}
       <View style={styles.bottomSmth}>
         {isToComment ? (
@@ -218,6 +296,55 @@ const Bottom = ({
 export default Bottom;
 
 export const styles = StyleSheet.create({
+  closeHere: {
+    justifyContent: 'center',
+    zIndex: 3,
+    alignItems: 'center',
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 34,
+    height: 34,
+  },
+  Lottie: {
+    flex: 1,
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  mainTextHere: {
+    color: '#555',
+    fontWeight: '300',
+    fontSize: 14,
+    textAlign: 'center',
+    fontFamily: 'Gilroy-Medium',
+  },
+  anocenteredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: Dimensions.get('window').height,
+    // marginTop: 22,
+    backgroundColor: '#00000066',
+  },
+  anomodalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 7,
+    // height: "90%",
+    padding: 15,
+    width: '90%',
+    paddingTop: 100,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   offVideo: {
     width: 38,
     height: 38,

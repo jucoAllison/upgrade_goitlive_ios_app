@@ -19,11 +19,14 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import Lottie from 'lottie-react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Feather from 'react-native-vector-icons/Feather';
 
-import Ebere from '../../assets/ebere.webp';
 import { MainContext } from '../../../App';
 import cryingEyes from '../../assets/json/Crying_emoji.json';
-const JoinedLiveHeader = ({ showBottomStm, item }) => {
+import AbbrNum from '../../helper/abbrev';
+// 
+const JoinedLiveHeader = ({ showBottomStm, item, openMenu, messages, leaveAndGoback }) => {
   const navigation = useNavigation();
   const { photo, full_name, _id, username, verify, status } = item;
   const [isJoining, setIsJoining] = useState(false);
@@ -75,7 +78,7 @@ const JoinedLiveHeader = ({ showBottomStm, item }) => {
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.backTouchableOpacity}
-        onPress={() => navigation.goBack()}
+        onPress={leaveAndGoback}
       >
         <SimpleLineIcons size={20} name="arrow-left" color={'#fff'} />
       </TouchableOpacity>
@@ -202,6 +205,21 @@ const JoinedLiveHeader = ({ showBottomStm, item }) => {
             )}
           </>
         )}
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={openMenu}
+          style={styles.offVideo}
+        >
+          <Ionicons name="gift" size={27} color="#fff" />
+        </TouchableOpacity>
+
+        {/* <TouchableOpacity activeOpacity={0.8} style={styles.offVideoTotal}>
+          <Feather name={'eye'} size={12} color="#fff" />
+          <Text style={{ color: '#ffffff99', marginLeft: 5 }}>
+            {AbbrNum(messages[messages?.length - 1]?.totalUsers - 1 || 0, 0)}
+          </Text>
+        </TouchableOpacity> */}
       </View>
     </Animated.View>
   );
@@ -210,6 +228,16 @@ const JoinedLiveHeader = ({ showBottomStm, item }) => {
 export default JoinedLiveHeader;
 
 const styles = StyleSheet.create({
+  offVideoTotal: {
+    flexDirection: 'row',
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+    borderRadius: 5,
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    marginRight: 8,
+    alignItems: 'center',
+  },
   startCallHere: {
     // backgroundColor: '#00000099',
     width: 89,
@@ -289,5 +317,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 7,
     left: -4,
+  },
+  offVideo: {
+    width: 45,
+    height: 45,
+    marginLeft: 'auto',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

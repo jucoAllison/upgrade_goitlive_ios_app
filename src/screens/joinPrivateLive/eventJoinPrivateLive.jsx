@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import { useEffect } from 'react';
 import {
   useIsFocused,
@@ -16,20 +17,27 @@ import {
   useRoute,
 } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {
-  ClientRoleType,
-  ChannelProfileType,
-  RtcSurfaceView,
-} from 'react-native-agora';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { ClientRoleType, ChannelProfileType } from 'react-native-agora';
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetScrollView,
+} from '@gorhom/bottom-sheet';
 
-import JoinPrivateLive from './joinPrivateLive';
+import ImgAbc from '../../assets/ic_launcher.png';
 import Button from '../../components/button';
 import { useContext } from 'react';
 import { MainContext } from '../../../App';
 import ErrMessage from '../../components/errMessage/errMessage';
 import { useAgoraEngine } from '../../../AgoraEngineContext';
+import Fallback from '../../components/fallback/fallback';
+import GiftAnimation from '../../components/gift_animation';
+
+const JoinPrivateLive = React.lazy(() => import('./joinPrivateLive'));
+const GiftStreamer = React.lazy(() => import('./giftStreamer'));
 const EventJoinPrivateLive = () => {
   const CTX = useContext(MainContext);
+  const [showAbsolute, setShowAbsolute] = useState(false);
   const isFocused = useIsFocused();
   const [remoteUid, setRemoteUid] = useState(0); // Uid of the remote user
   const [isSetting, setIsSetting] = useState(false);
@@ -49,19 +57,34 @@ const EventJoinPrivateLive = () => {
   const [joiningErr, setJoiningErr] = useState('');
   const [random, setRandom] = useState(0);
   const [joinJson, setJoinJson] = useState(null);
+  const bottomSheetModalRef = useRef(null);
+  const snapping = ['25%', '40%', '70%'];
+  const snapPoints = useMemo(() => [...snapping], []);
+  const [giftOverride, setGiftOverride] = useState(null);
+  const [messages, setMessages] = useState([
+    {
+      _id: Math.random(),
+      user: {
+        username: `Notice`,
+        img: ImgAbc,
+        verify: true,
+      },
+      msg: 'Welcome to GoitLive!! Enjoy engaging with people in real time; you must be at least eighteen years old.',
+    },
+  ]);
 
-  const initagora = () => {
+  const initagora = caname => {
     if (!agoraEngine) return;
 
     agoraEngine.enableVideo();
     agoraEngine.registerEventHandler({
       onJoinChannelSuccess: async (_connection, uid) => {
-        // console.log("uid DATA HERE!!", uid)
-        console.log('_connection DATA HERE!!', _connection?.localUid);
+        console.log('caname for initagora HERE!!', caname, route?.params?._id);
+        // console.log('_connection DATA HERE!!', _connection?.localUid);
         setRandom(_connection?.localUid);
 
         const joining = await fetch(
-          `${CTX.systemConfig?.p}get/account/join/private/call/${channelName}/${_connection?.localUid}`,
+          `${CTX.systemConfig?.p}get/account/join/private/call/${route?.params?._id}/${_connection?.localUid}`,
           {
             method: 'GET',
             headers: {
@@ -72,17 +95,30 @@ const EventJoinPrivateLive = () => {
         );
         const joinJson = await joining.json();
         if (joinJson?.e) {
-          agoraEngine?.leaveChannel();
           setLoading(false);
           setErrMsg(joinJson?.m);
           setJoiningErr(joinJson?.m);
+          setShowErrorModal(true);
           console.log('joinJson?.m =>>>> ', joinJson?.m);
           setShowMsg(true);
+
+          if (joinJson?._id == route?.params?._id) {
+            agoraEngine?.leaveChannel();
+          }
           return;
         }
 
         // console.log("uid DATA HERE!!", uid)
-        setRemoteUid(_connection?.localUid);
+        // setRemoteUid(_connection?.localUid);
+        // setRemoteUid(uid);
+        console.log(
+          'joinJson?.data =>>> ',
+          joinJson?.data?.subscribers?.filter((v, i) => v?.isHost)[0]?.random,
+        );
+
+        setRemoteUid(
+          joinJson?.data?.subscribers?.filter((v, i) => v?.isHost)[0]?.random,
+        );
         setJoinJson(joinJson?.data);
 
         // showMessage('Successfully joined the channel ' + channelName);
@@ -102,12 +138,26 @@ const EventJoinPrivateLive = () => {
         setErrMsg('A user joined ');
         setShowMsg(true);
       },
+
+      // onUserJoined: (_connection, Uid) => {
+      //           // if (!isJoined) {
+      //           // }
+      //           setIsSetting(false);
+      //           setRemoteUid(Uid);
+      //           console.log('onUserJoined called =>>> ', Uid);
+      //         },
+
       onUserOffline: (_connection, Uid) => {
         // showMessage('Remote user left the channel. uid: ' + Uid);
 
         if (joinJson?.subscribers?.filter(v => v?.random == Uid)[0]?.isHost) {
           leave();
-          navigation.goBack();
+          navigation.replace('Navigation', {
+            screen: 'Private', // bottom tab
+            params: {
+              screen: 'privateProfiles', // top tab inside Deposit
+            },
+          });
         }
 
         setErrMsg('A user left the channel ');
@@ -125,6 +175,12 @@ const EventJoinPrivateLive = () => {
           setErrMsg('This stream has expired or token is invalid.');
           setShowMsg(true);
           agoraEngine.leaveChannel();
+          navigation.replace('Navigation', {
+            screen: 'Private', // bottom tab
+            params: {
+              screen: 'privateProfiles', // top tab inside Deposit
+            },
+          });
         }
       },
 
@@ -137,6 +193,13 @@ const EventJoinPrivateLive = () => {
           setErrMsg('Token expired, stream is over.');
           setShowMsg(true);
           agoraEngine.leaveChannel();
+
+          navigation.replace('Navigation', {
+            screen: 'Private', // bottom tab
+            params: {
+              screen: 'privateProfiles', // top tab inside Deposit
+            },
+          });
         }
       },
     });
@@ -165,9 +228,6 @@ const EventJoinPrivateLive = () => {
   const join = async () => {
     try {
       if (!channelName) return;
-      // console.log(
-      //   `${CTX.systemConfig?.p}get/account/join/private/call/${channelName}`,
-      // );
 
       agoraEngine?.setChannelProfile(
         ChannelProfileType.ChannelProfileLiveBroadcasting,
@@ -179,7 +239,8 @@ const EventJoinPrivateLive = () => {
       });
     } catch (error) {
       console.log('error HERE JOIN =>> ', error);
-      setJoiningErr('Single Girls send in your request here!!!');
+      // setJoiningErr('Single Girls send in your request here!!!');
+      // setShowErrorModal(true)
     }
   };
 
@@ -192,7 +253,7 @@ const EventJoinPrivateLive = () => {
     const num = 0;
     try {
       const fetching = await fetch(
-        `${CTX.systemConfig?.ats}rtc/${route?.params?._id}/publisher/${num}`,
+        `${CTX.systemConfig?.ats}private/stream/rtc/${route?.params?._id}/publisher/${num}`,
         {
           method: 'GET',
           headers: {
@@ -207,6 +268,8 @@ const EventJoinPrivateLive = () => {
         return CTX.logoutUser();
       }
       if (parsedJson?.error) {
+        setShowErrorModal(true);
+        setJoiningErr(parsedJson?.msg);
         setLoading(false);
         setErrMsg(parsedJson?.msg);
         console.log('parsedJson?.msg =>>>>> ', parsedJson?.msg);
@@ -229,7 +292,7 @@ const EventJoinPrivateLive = () => {
     }
   };
 
-  const leave = async () => {
+  const leave = async isany => {
     try {
       if (!channelName) return;
 
@@ -254,41 +317,73 @@ const EventJoinPrivateLive = () => {
       CTX.socketObj?.emit('leave-room', { room: route?.params?._id });
       setAppId(null);
       setChannelName(null);
+      setJoinJson(null);
       setToken(null);
       setLoading(false);
       setIsSetting(false);
-      agoraEngine?.leaveChannel();
       setRemoteUid(0);
       setShowErrorModal(false);
       setIsJoined(false);
-      // setIsSelected(null);
+      agoraEngine.unregisterEventHandler();
+      agoraEngine?.leaveChannel();
+
+      if (isany?.forReal) {
+        navigation.replace('Navigation', {
+          screen: 'Private', // bottom tab
+          params: {
+            screen: 'privateProfiles', // top tab inside Deposit
+          },
+        });
+      }
     } catch (e) {
       console.log('e from leave handler => ', e);
     }
   };
 
+  const leaveAndGoback = () => {
+    leave();
+    navigation.replace('Navigation', {
+      screen: 'Private', // bottom tab
+      params: {
+        screen: 'privateProfiles', // top tab inside Deposit
+      },
+    });
+  };
+
   useEffect(() => {
-    // if (isJoined) return;
-    if (isFocused) {
-      CTX.setStatusBarColor('#0a171e');
-      getTokenAndId();
-    }
+    if (!isFocused) return;
+
+    CTX.setStatusBarColor('#0a171e');
+    getTokenAndId();
 
     return () => {
-      agoraEngine.unregisterEventHandler();
       leave();
+
       setElapsedTime(0);
       setShowErrorModal(false);
+      setRemoteUid(0);
+      setJoinJson(null);
+      setChannelName(null);
+      setToken(null);
     };
   }, [isFocused]);
 
   useEffect(() => {
-    // Initialize Agora engine when the app starts
-    if (!token) return;
-    if (!channelName) return;
+    if (!isFocused) return;
+    if (!token || !channelName || !agoraEngine) return;
 
-    initagora();
-  }, [token, channelName]);
+    let active = true;
+
+    if (active) {
+      initagora(channelName);
+      // caname
+    }
+
+    return () => {
+      active = false;
+      agoraEngine?.unregisterEventHandler();
+    };
+  }, [isFocused, token, channelName, agoraEngine]);
 
   // if after 17 seconds, there is nothing, return back to go live
   // useEffect(() => {
@@ -318,6 +413,27 @@ const EventJoinPrivateLive = () => {
   //     clearInterval(timer); // Clean up the timer on unmount
   //   };
   // }, [isFocused, route?.params, isSetting, remoteUid]);
+
+  const openMenu = useCallback(() => {
+    setShowAbsolute(true);
+  }, []);
+
+  const closeModalPress = useCallback(() => {
+    setShowAbsolute(false);
+    bottomSheetModalRef.current?.close();
+  }, []);
+
+  // renders
+  const renderBackdrop = useCallback(
+    props => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={1}
+        appearsOnIndex={2}
+      />
+    ),
+    [],
+  );
 
   return (
     <>
@@ -409,7 +525,12 @@ const EventJoinPrivateLive = () => {
                 // loading={leaving}
                 onPress={() => {
                   leave();
-                  navigation.goBack();
+                  navigation.replace('Navigation', {
+                    screen: 'Private', // bottom tab
+                    params: {
+                      screen: 'privateProfiles', // top tab inside Deposit
+                    },
+                  });
                 }}
                 label={'Go back'}
                 style={{ width: '100%', marginTop: 30, height: 50 }}
@@ -419,16 +540,84 @@ const EventJoinPrivateLive = () => {
           </View>
         </Pressable>
       </Modal>
-      <JoinPrivateLive
-        leave={leave}
-        remoteUid={remoteUid}
-        room={route?.params?._id}
-        item={route?.params}
-        isSetting={isSetting}
-        loading={loading}
-        channelName={channelName}
-        random={random}
-      />
+
+      {showAbsolute && (
+        <Pressable
+          onPress={closeModalPress}
+          style={{
+            ...styles.showAbsolute,
+          }}
+        >
+          <BottomSheet
+            ref={bottomSheetModalRef}
+            index={1}
+            snapPoints={snapPoints}
+            backdropComponent={renderBackdrop}
+            handleComponent={() => (
+              <View style={styles.handleComponentStyle}>
+                <Text style={{ ...styles.reactionText, color: '#fff' }}>
+                  Details
+                </Text>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={closeModalPress}
+                  style={styles.closeLine}
+                >
+                  <Ionicons color={'#838289'} name="close" size={23} />
+                </TouchableOpacity>
+              </View>
+            )}
+          >
+            <Pressable
+              style={{ flex: 1 }}
+              onPress={() => {
+                return null;
+              }}
+            >
+              <BottomSheetScrollView>
+                {loading ? (
+                  <View style={styles.loadingActivityCover}>
+                    <ActivityIndicator color={'#3b3b3b'} size={40} />
+                  </View>
+                ) : (
+                  <Suspense fallback={<Fallback />}>
+                    <GiftStreamer
+                      setErrMsg={setErrMsg}
+                      streamer={route?.params}
+                      setShowMsg={setShowMsg}
+                      leave={leave}
+                      random={random}
+                      setGiftOverride={setGiftOverride}
+                      messages={messages}
+                      setMessages={setMessages}
+                      closeModalPress={closeModalPress}
+                    />
+                  </Suspense>
+                )}
+              </BottomSheetScrollView>
+            </Pressable>
+          </BottomSheet>
+        </Pressable>
+      )}
+      <GiftAnimation override={giftOverride} />
+
+      <Suspense fallback={<Fallback />}>
+        <JoinPrivateLive
+          leave={leave}
+          remoteUid={remoteUid}
+          room={route?.params?._id}
+          item={route?.params}
+          isSetting={isSetting}
+          loading={loading}
+          channelName={channelName}
+          random={random}
+          openMenu={openMenu}
+          messages={messages}
+          setMessages={setMessages}
+          leaveAndGoback={leaveAndGoback}
+        />
+      </Suspense>
     </>
   );
 };
@@ -436,6 +625,58 @@ const EventJoinPrivateLive = () => {
 export default EventJoinPrivateLive;
 
 const styles = StyleSheet.create({
+  eachBtnCover: {
+    backgroundColor: '#efefef',
+    paddingHorizontal: 25,
+    borderRadius: 50,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  eachBtnText: {
+    color: '#262626',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 15,
+  },
+
+  showAbsolute: {
+    position: 'absolute',
+    // backgroundColor: '#e010b400',
+    backgroundColor: '#00003330',
+    width: '100%',
+    height: '100%',
+    zIndex: 220,
+  },
+  handleComponentStyle: {
+    width: '100%',
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+    flexDirection: 'row',
+    backgroundColor: '#e20154',
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomColor: '#d1d1d1',
+    borderBottomWidth: 2,
+  },
+  reactionText: {
+    color: '#000',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  closeLine: {
+    position: 'absolute',
+    right: 15,
+    backgroundColor: '#e1e1e1',
+    width: 30,
+    height: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginLeft: 'auto',
+    justifyContent: 'center',
+  },
   coverMain: {
     flex: 1,
     width: '100%',

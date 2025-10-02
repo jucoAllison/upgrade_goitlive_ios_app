@@ -8,15 +8,14 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import React, {Suspense, useEffect, useRef, useState} from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
-import {useNavigation} from '@react-navigation/core';
+import { useNavigation } from '@react-navigation/core';
 import LinearGradient from 'react-native-linear-gradient';
 import AbbrNum from '../../helper/abbrev';
 
-
-const TopDetailsHere = ({leaveChannel, isJoined, messages, timer}) => {
+const TopDetailsHere = ({ leaveChannel, isJoined, messages, timer }) => {
   const navigation = useNavigation();
   const [index, setIndex] = useState(0);
   const flatListRef = useRef(null);
@@ -43,24 +42,33 @@ const TopDetailsHere = ({leaveChannel, isJoined, messages, timer}) => {
   return (
     <>
       <View style={styles.mainTopCover}>
-        {timer < 1 && <>
-        {isJoined && (
-          <TouchableOpacity activeOpacity={0.8} style={styles.offVideoTotal}>
-            <Feather name={'eye'} size={12} color="#fff" />
-            <Text style={{color: '#ffffff99', marginLeft: 5}}>
-              {AbbrNum(messages[messages.length - 1]?.totalUsers - 1 || 0, 0)}
-            </Text>
-          </TouchableOpacity>
+        {timer < 1 && (
+          <>
+            {isJoined && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.offVideoTotal}
+              >
+                <Feather name={'eye'} size={12} color="#fff" />
+                <Text style={{ color: '#ffffff99', marginLeft: 5 }}>
+                  {AbbrNum(
+                    messages[messages.length - 1]?.totalUsers - 1 || 0,
+                    0,
+                  )}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
-        </>}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={closeHandler}
-          style={styles.offVideo}>
+          style={styles.offVideo}
+        >
           <Ionicons name="close" size={27} color="#fff" />
         </TouchableOpacity>
       </View>
-      <View style={{marginTop: 0}}>
+      <View style={{ marginTop: 0 }}>
         <LinearGradient
           colors={['#00000019', '#00000000']}
           style={{

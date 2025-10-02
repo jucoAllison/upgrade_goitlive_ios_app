@@ -62,7 +62,7 @@ const PrivateProfile = ({
   const [allUsers, setAllUsers] = useState([]);
   const [isModal, setIsModal] = useState(null);
   const [myUid, setMyUid] = useState(null);
-  const [toBlock, setToBlock] = useState(null)
+  const [toBlock, setToBlock] = useState(null);
   const [messages, setMessages] = useState([
     {
       _id: Math.random(),
@@ -71,7 +71,7 @@ const PrivateProfile = ({
         img: ImgAbc,
         verify: true,
       },
-      msg: 'Welcome to GoItLive!! Enjoy engaging with people in real time; you must be at least eighteen years old.',
+      msg: 'Welcome to GoitLive!! Enjoy engaging with people in real time; you must be at least eighteen years old.',
     },
   ]);
   const scrollViewRef = useRef();
@@ -287,9 +287,27 @@ const PrivateProfile = ({
         setShowMsg(true);
         return;
       }
+      setMessages([
+        {
+          _id: Math.random(),
+          user: {
+            username: `Notice`,
+            img: ImgAbc,
+            verify: true,
+          },
+          msg: 'Welcome to GoitLive!! Enjoy engaging with people in real time; you must be at least eighteen years old.',
+        },
+      ]);
       setLeaving(false);
       setIsModal(null);
       setSwipeEnabled(true);
+
+      setToken(null);
+      setUid(null);
+      setTimer(5);
+      setAllUsers([]);
+      setMyUid(null);
+      setToBlock(null);
 
       await CTX.socketObj?.emit('oya-everybody-leave', {
         room: channelName,
@@ -327,11 +345,10 @@ const PrivateProfile = ({
     setRefreshing(false);
   };
 
-  
-const blockUser = async () => {
+  const blockUser = async () => {
     setLeaving(true);
-  try {
-     const fetching = await fetch(
+    try {
+      const fetching = await fetch(
         `${CTX.systemConfig?.p}get/account/block/private/call/user/${channelName}/${toBlock}`,
         {
           method: 'GET',
@@ -349,23 +366,20 @@ const blockUser = async () => {
         return;
       }
 
-       await CTX.socketObj?.emit('block-user-stream', {
+      await CTX.socketObj?.emit('block-user-stream', {
         room: channelName,
         remoteID: toBlock,
       });
 
-
       setLeaving(false);
       setIsModal(null);
-
-
-  } catch (error) {
-          setLeaving(false);
+    } catch (error) {
+      setLeaving(false);
       setErrMsg('Network request failed');
       setShowMsg(true);
-      console.log("error from blockUserHandler =>> ", error);
-  }
-}
+      console.log('error from blockUserHandler =>> ', error);
+    }
+  };
 
   return (
     <>
@@ -439,7 +453,9 @@ const blockUser = async () => {
               >
                 {isModal == 'close'
                   ? "You want to close live streaming. When you end a stream, it won't be saved"
-                  : `You are about to block ${toBlock?.toString().slice(-4)}. Blocked user can't join this stream again`}
+                  : `You are about to block ${toBlock
+                      ?.toString()
+                      .slice(-4)}. Blocked user can't join this stream again`}
               </Text>
 
               <Button
